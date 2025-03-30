@@ -61,7 +61,6 @@ M.send_selected = function()
 	vim.notify("Sending...")
 	state["response"] = utils.process(content)
 
-	ui.show_metadata(state)
 	ui.show_body(state)
 end
 
