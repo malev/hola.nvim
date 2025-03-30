@@ -29,3 +29,7 @@ DELETE https://jsonplaceholder.typicode.com/posts/1
 
 ```
 
+## Development
+
+Clone this repo and open nvim with `nvim -u scripts/init.lua examples.http`. Use `make test` will run all the tests.
+
