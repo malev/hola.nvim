@@ -48,40 +48,6 @@ end
 
 M.setup = function(opts)
 	opts = opts or {}
-
-	-- vim.api.nvim_create_user_command("Send", "require('hola').send_selected()", {})
-	-- vim.api.nvim_command('command! Send lua require("hola").send_selected()')
-	-- vim.keymap.set("v", "<leader>h", "<esc>:lua M.start()<cr>", { noremap = true })
-end
-
-function M.add_numbers(a, b)
-	return a + b
-end
-
-function M.greet(name)
-	return "Hello, " .. name .. "!"
-end
-
-M.create_window = function()
-	print("create window")
-	local buf = vim.api.nvim_create_buf(true, true)
-	local win_opts = {
-		split = "right",
-		win = 0,
-	}
-	local win = vim.api.nvim_open_win(buf, false, win_opts)
-	vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "hola" })
-	vim.api.nvim_set_option_value("filetype", "json", { buf = buf })
-
-	return { buf = buf, win = win }
-end
-
-M.toggle = function()
-	ui.toggle(state)
-end
-
-M.hide = function()
-	ui.hide(state)
 end
 
 M.send_selected = function()
@@ -95,8 +61,20 @@ M.send_selected = function()
 	vim.notify("Sending...")
 	state["response"] = utils.process(content)
 
-	ui.show_info(state)
-	ui.show(state)
+	ui.show_metadata(state)
+	ui.show_body(state)
+end
+
+M.close_window = function()
+	ui.close_window(state)
+end
+
+M.show_window = function()
+	ui.show_window(state)
+end
+
+M.maximize_window = function()
+	ui.maximize_window(state)
 end
 
 return M

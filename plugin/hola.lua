@@ -9,16 +9,23 @@ end, {
 	desc = "Send selected",
 })
 
-vim.api.nvim_create_user_command("HolaHide", function()
-	require("hola").hide()
+vim.api.nvim_create_user_command("HolaCloseWindow", function()
+	require("hola").close_window()
 end, {
 	nargs = "*",
-	desc = "Hide window",
+	desc = "Close window",
 })
 
-vim.api.nvim_create_user_command("HolaToggle", function()
-	require("hola").toggle()
+vim.api.nvim_create_user_command("HolaShowWindow", function()
+	require("hola").show_window()
 end, {
 	nargs = "*",
-	desc = "Toggle window",
+	desc = "Close window",
+})
+
+vim.api.nvim_create_user_command("HolaMaximizeWindow", function()
+	require("hola").maximize_window()
+end, {
+	nargs = "*",
+	desc = "Close window",
 })
