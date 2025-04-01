@@ -1,12 +1,16 @@
-### Get posts
+### Get all users
+# Get all posts
 GET https://jsonplaceholder.typicode.com/posts
+Accept: application/json
 
 ### Create a new post
 POST https://jsonplaceholder.typicode.com/posts
+Content-Type: application/json
+X-Custom-Header: MyValue
 
 {"title": "hello"}
 
-### Delete post
+### Delete a post
 DELETE https://jsonplaceholder.typicode.com/posts/1
 
 ### Slow response
