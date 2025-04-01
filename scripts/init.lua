@@ -19,7 +19,8 @@ vim.wo.number = true
 local map = vim.keymap.set
 
 -- Hola keymaps
-map("v", "<leader>hs", "<cmd>:HolaSend<cr>", { desc = "Send hola request" })
+map("n", "<leader>hs", "<cmd>:HolaSend<cr>", { desc = "Send request" })
+map("v", "<leader>hs", "<cmd>:HolaSendSelected<cr>", { desc = "Send selected request" })
 map({ "n", "v" }, "<leader>hw", "<cmd>:HolaShowWindow<cr>", { desc = "Show metadata window" })
 map({ "n", "v" }, "<leader>hm", "<cmd>:HolaMaximizeWindow<cr>", { desc = "Maximize metadata window" })
 

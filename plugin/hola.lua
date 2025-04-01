@@ -3,10 +3,17 @@ if vim.fn.has("nvim-0.7.0") ~= 1 then
 end
 
 vim.api.nvim_create_user_command("HolaSend", function()
+	require("hola").send()
+end, {
+	nargs = "*",
+	desc = "Send request",
+})
+
+vim.api.nvim_create_user_command("HolaSendSelected", function()
 	require("hola").send_selected()
 end, {
 	nargs = "*",
-	desc = "Send selected",
+	desc = "Send selected request",
 })
 
 vim.api.nvim_create_user_command("HolaCloseWindow", function()
@@ -20,7 +27,7 @@ vim.api.nvim_create_user_command("HolaShowWindow", function()
 	require("hola").show_window()
 end, {
 	nargs = "*",
-	desc = "Close window",
+	desc = "Show window",
 })
 
 vim.api.nvim_create_user_command("HolaMaximizeWindow", function()

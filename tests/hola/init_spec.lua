@@ -1,1 +1,1 @@
-describe("hola.nvim", function() end)
+describe("hola", function() end)
