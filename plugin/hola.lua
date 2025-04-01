@@ -34,5 +34,5 @@ vim.api.nvim_create_user_command("HolaMaximizeWindow", function()
 	require("hola").maximize_window()
 end, {
 	nargs = "*",
-	desc = "Close window",
+	desc = "Maximize window",
 })
