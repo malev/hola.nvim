@@ -24,8 +24,8 @@
         };
         defaultPackage = self.packages.${system}.default;
         nvimPlugins = {
-          ${hola-nvim} = hola-nvim;
-          plenary-nvim = plenaryPlugin;
+          "hola-nvim" = hola-nvim;
+          "plenary-nvim" = plenaryPlugin;
         };
       });
 }
