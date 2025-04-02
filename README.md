@@ -11,7 +11,7 @@
 }
 ```
 
-Commands: `HolaSend`, `HolaToggle`, `HolaHide`.
+Commands: `HolaSend`, `HolaShowWindow`, `HolaMaximizeWindow`.
 
 ## Example
 
