@@ -16,15 +16,15 @@ Commands: `HolaSend`, `HolaShowWindow`, `HolaMaximizeWindow`.
 ## Example
 
 ```http
-# Get posts
+### Get posts
 GET https://jsonplaceholder.typicode.com/posts
 
-# Create a new post
+### Create a new post
 POST https://jsonplaceholder.typicode.com/posts
 
 {"title": "hello"}
 
-# Delete post
+### Delete post
 DELETE https://jsonplaceholder.typicode.com/posts/1
 
 ```
