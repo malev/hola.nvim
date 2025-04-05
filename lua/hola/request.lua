@@ -2,16 +2,38 @@ local curl = require("plenary.curl")
 
 local M = {}
 
-local function compile_template(str)
-	return str:gsub("{{([^}]+)}}", function(var_name)
-		local env_value = vim.env[var_name]
-		if env_value then
-			return env_value
+--- Compiles a template string by replacing {{var_name}} placeholders.
+-- Dotenv takes precedence over OS env.
+--
+-- @param str (string) The template string.
+-- @return (string|nil) The compiled string, or nil if strict mode fails.
+local function compile_template(sources, str)
+	if not str then
+		return ""
+	end
+
+	local result = str:gsub("{{([^}]+)}}", function(var_name_raw)
+		local var_name = vim.fn.trim(var_name_raw) -- Trim whitespace within braces
+		local found_value = nil
+
+		-- Search through the provided sources in order (e.g., dotenv first)
+		for _, source_table in ipairs(sources) do
+			if source_table and source_table[var_name] ~= nil then
+				found_value = source_table[var_name]
+				break -- Found in this source, stop searching
+			end
+		end
+
+		if found_value ~= nil then
+			-- Convert to string in case value was boolean/number from .env
+			return tostring(found_value)
 		else
-			vim.notify("Environment variable not found: " .. var_name, vim.log.warning)
-			return ""
+			vim.notify("Template variable not found: " .. var_name, vim.log.levels.ERROR, { title = "Template Error" })
+			-- Return original placeholder to signal failure within gsub for the outer check
+			return "{{" .. var_name_raw .. "}}"
 		end
 	end)
+	return result
 end
 
 --- Removes lines that consist entirely of comments.
@@ -324,10 +346,17 @@ local function detect_filetype(response)
 	return response
 end
 
-function M.process(str)
+local function compile_template_curried(sources)
+	return function(str)
+		return compile_template(sources, str)
+	end
+end
+
+function M.process(str, sources)
+	local compile_with_my_sources = compile_template_curried(sources)
 	return compose(
 		remove_comments,
-		compile_template,
+		compile_with_my_sources,
 		parse,
 		add_user_agent,
 		send_request,

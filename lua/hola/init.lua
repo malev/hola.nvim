@@ -3,32 +3,30 @@ local M = {}
 local request = require("hola.request")
 local utils = require("hola.utils")
 local ui = require("hola.ui")
+local dotenv = require("hola.dotenv")
 
 local state = {}
+
+local function preflight(request_text)
+	if not utils.validate_request_text(request_text) then
+		vim.notify("Invalid request format.", vim.log.levels.ERROR)
+		return
+	end
+
+	local sources = { dotenv.load(), vim.env }
+
+	vim.notify("Sending...")
+	state["response"] = request.process(request_text, sources)
+	ui.show_body(state)
+end
 
 M.setup = function(opts)
 	opts = opts or {}
 end
 
-M.print_request = function()
-	local request_text = utils.get_request_under_cursor()
-	if not request_text then
-		vim.notify("Failed retrieving request.", vim.log.levels.ERROR)
-		return
-	end
-	vim.notify(request_text)
-end
-
 M.send = function()
 	local request_text = utils.get_request_under_cursor()
-
-	if not utils.validate_request_text(request_text) then
-		return
-	end
-
-	vim.notify("Sending...")
-	state["response"] = request.process(request_text)
-	ui.show_body(state)
+	preflight(request_text)
 end
 
 M.send_selected = function()
@@ -39,9 +37,7 @@ M.send_selected = function()
 		return
 	end
 
-	vim.notify("Sending...")
-	state["response"] = request.process(request_text)
-	ui.show_body(state)
+	preflight(request_text)
 end
 
 M.close_window = function()
