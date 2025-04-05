@@ -4,7 +4,7 @@
 
 ## Installation and requirements
 
-```
+```lua
 {
   "malev/hola.nvim",
   dependencies = { "nvim-lua/plenary.nvim" },
@@ -15,7 +15,7 @@ Commands: `HolaSend`, `HolaShowWindow`, `HolaMaximizeWindow`.
 
 ## Example
 
-```
+```http
 # Get posts
 GET https://jsonplaceholder.typicode.com/posts
 
@@ -37,7 +37,7 @@ and if there are too many headers, and you need more space, you can maximize it 
 
 Recommended keymaps:
 
-```
+```lua
 local map = vim.keymap.set
 
 -- Hola keymaps
@@ -63,7 +63,7 @@ When `hola.nvim` processes an `.http` file, it scans for placeholders in the for
 
 Consider the following `.http` file:
 
-```
+```http
 POST https://postman-echo.com/post
 Content-Type: application/json
 X-API-KEY: {{X_API_KEY}}
@@ -85,15 +85,12 @@ X_API_SECRET=your_super_secret
 API_KEY_FOR_JSON=another_key_from_env
 ```
 
-When you execute this `.http` request using `hola.nvim`, the `{{X_API_KEY}}` placeholder will be replaced with `your_actual_api_key`, `{{X_API_SECRET}}` with `your_super_secret`, and `{{API_KEY_FOR_JSON}}` with `another_key_from_env`.
-
 **2. Alternatively, you can set these variables as environment variables in your terminal before launching Neovim:**
 
 ```bash
 export X_API_KEY="another_api_key_from_env"
 export X_API_SECRET="even_more_secret"
 export API_KEY_FOR_JSON="yet_another_key"
-nvim .
 ```
 
 If no `.env` file is found or if a specific variable is not defined in the `.env` file, `hola.nvim` will fall back to checking your system's environment variables.
