@@ -1,54 +1,67 @@
-# Hola.nvim
+# Hola.nvim: Your In-Neovim REST Command Center
 
-> REST-client for Neovim with support to env vars and dotfiles
+> Send HTTP requests without leaving the comfort of your editor, with built-in environment and dotenv support!
 
-## Installation and requirements
+## Installation: Get Ready to Say "¡Hola!" 👋
+
+Just add this to your `plugins` table in your Neovim configuration (using your preferred plugin manager):
 
 ```lua
 {
   "malev/hola.nvim",
   dependencies = { "nvim-lua/plenary.nvim" },
 }
-```
 
-Commands: `HolaSend`, `HolaShowWindow`, `HolaMaximizeWindow`.
+*Commands:*
 
-## Example
+  * `:HolaSend`: Unleash the request! 🚀
+  * `:HolaShowWindow`: Peek behind the curtain (see those headers!). 👀
+  * `:HolaMaximizeWindow`: Go full screen for header inspection. 🔍
+
+## Example: Let's Send Some Requests! 📬
 
 ```http
-### Get posts
+### Get a list of awesome posts! ✨
 GET https://jsonplaceholder.typicode.com/posts
 
-### Create a new post
+### Create a brand new post (let\'s see if they like it!) ✍️
 POST https://jsonplaceholder.typicode.com/posts
 
-{"title": "hello"}
+{"title": "hello from hola.nvim!"}
 
-### Delete post
+### Oops, let\'s pretend to delete post #1 🗑️
 DELETE https://jsonplaceholder.typicode.com/posts/1
-
 ```
 
-## Usage
+## Usage: Sending Your First "¡Hola!" 🎬
 
-Open the a file with requests, like the example above. Navigate to the request you want to send and call the command `:HolaSend`.
-The reponse will be displayed in a panel on the right. If you need to see the headers, you can call `:HolaShowWindow`,
-and if there are too many headers, and you need more space, you can maximize it with `:HolaMaximizeWindow`.
+1.  **Open your `.http` request file:** Just like the cool example above.
+2.  **Navigate to the request:** Place your cursor anywhere within the request block you want to send.
+3.  **Say the magic words:** Execute the `:HolaSend` command.
 
-Recommended keymaps:
+... and BAM! 🎉 The response will appear in a sleek panel on the right.
+
+**Need to dive deeper?**
+
+* `:HolaShowWindow`: Want to see the raw headers and metadata? This command will pop open a window with all the juicy details.
+* `:HolaMaximizeWindow`: Overwhelmed by headers? Maximize the metadata window for a better view.
+
+## Recommended Keymaps: Supercharge Your Workflow! ⚡
+
+Here are some handy keymaps to make sending requests a breeze. Add these to your Neovim configuration:
 
 ```lua
 local map = vim.keymap.set
 
--- Hola keymaps
+-- Hola keymaps - Send it! 🚀
 map("n", "<leader>hs", "<cmd>:HolaSend<cr>", { desc = "Send request" })
 map("v", "<leader>hs", "<cmd>:HolaSendSelected<cr>", { desc = "Send selected request" })
+-- Hola keymaps - Peek at the details 👀
 map({ "n", "v" }, "<leader>hw", "<cmd>:HolaShowWindow<cr>", { desc = "Show metadata window" })
+-- Hola keymaps - Maximize for clarity 🔍
 map({ "n", "v" }, "<leader>hm", "<cmd>:HolaMaximizeWindow<cr>", { desc = "Maximize metadata window" })
 
-```
-
-## `.env` File and Environment Variables Support
+## Power Up Your Requests with `.env` and Environment Variables! ⚙️
 
 `hola.nvim` allows you to dynamically inject values into your `.http` files using placeholders that reference variables defined in `.env` files or environment variables. This is particularly useful for managing API keys, secrets, and other configuration that you don't want to hardcode directly in your request files.
 
@@ -95,7 +108,13 @@ export API_KEY_FOR_JSON="yet_another_key"
 
 If no `.env` file is found or if a specific variable is not defined in the `.env` file, `hola.nvim` will fall back to checking your system's environment variables.
 
-## Development
+## Development: Join the "¡Hola!" Brigade! 🧑‍💻
 
-Clone this repo and open nvim with `nvim -u scripts/init.lua examples.http`. Use `make test` will run all the tests.
+Want to contribute to `hola.nvim`? Awesome! Here's how to get started:
+
+1.  Clone this repo: `git clone <your_repo_url>`
+2.  Open Neovim in the project root: `nvim -u scripts/init.lua examples.http`
+3.  Run the tests: `make test` (Let's make sure everything is saying "¡Hola!" correctly!)
+
+We welcome pull requests and appreciate your contributions! 🙏
 
