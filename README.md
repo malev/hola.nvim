@@ -11,6 +11,7 @@ Just add this to your `plugins` table in your Neovim configuration (using your p
   "malev/hola.nvim",
   dependencies = { "nvim-lua/plenary.nvim" },
 }
+```
 
 *Commands:*
 
@@ -60,6 +61,7 @@ map("v", "<leader>hs", "<cmd>:HolaSendSelected<cr>", { desc = "Send selected req
 map({ "n", "v" }, "<leader>hw", "<cmd>:HolaShowWindow<cr>", { desc = "Show metadata window" })
 -- Hola keymaps - Maximize for clarity 🔍
 map({ "n", "v" }, "<leader>hm", "<cmd>:HolaMaximizeWindow<cr>", { desc = "Maximize metadata window" })
+```
 
 ## Power Up Your Requests with `.env` and Environment Variables! ⚙️
 
