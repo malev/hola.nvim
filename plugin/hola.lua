@@ -3,35 +3,49 @@ if vim.fn.has("nvim-0.7.0") ~= 1 then
 end
 
 vim.api.nvim_create_user_command("HolaSend", function()
-	require("hola").send()
+	require("hola").run_request_under_cursor()
 end, {
 	nargs = "*",
 	desc = "Send request",
 })
 
 vim.api.nvim_create_user_command("HolaSendSelected", function()
-	require("hola").send_selected()
+	require("hola").run_selected_request()
 end, {
 	nargs = "*",
 	desc = "Send selected request",
 })
 
+vim.api.nvim_create_user_command("HolaToggle", function()
+	require("hola").toggle()
+end, {
+	nargs = "*",
+	desc = "Toggle between response body and metadata",
+})
+
+vim.api.nvim_create_user_command("HolaClose", function()
+	require("hola").close()
+end, {
+	nargs = "*",
+	desc = "Close response window",
+})
+
 vim.api.nvim_create_user_command("HolaCloseWindow", function()
-	require("hola").close_window()
+	vim.print("Deprecated. Try :HolaToggle instead.", vim.log.levels.WARN)
 end, {
 	nargs = "*",
 	desc = "Close window",
 })
 
 vim.api.nvim_create_user_command("HolaShowWindow", function()
-	require("hola").show_window()
+	vim.print("Deprecated. Try :HolaToggle instead.", vim.log.levels.WARN)
 end, {
 	nargs = "*",
 	desc = "Show window",
 })
 
 vim.api.nvim_create_user_command("HolaMaximizeWindow", function()
-	require("hola").maximize_window()
+	vim.print("Deprecated. Try :HolaToggle instead.", vim.log.levels.WARN)
 end, {
 	nargs = "*",
 	desc = "Maximize window",
