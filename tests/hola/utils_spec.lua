@@ -11,44 +11,48 @@ local function set_cursor(line, col)
 end
 
 -- Define the test content once
-local TEST_HTTP_CONTENT = {
-	"# test.http - Example file for testing request parsing", -- L1
-	"", -- L2
-	"### Get all users", -- L3
-	"# Simple GET request at the start", -- L4
-	"GET http://localhost:3000/api/users", -- L5
-	"Accept: application/json", -- L6
-	"", -- L7
-	"", -- L8
-	"### Create a new user", -- L9
-	"# POST request with headers and body", -- L10
-	"POST https://httpbin.org/post", -- L11
-	"Content-Type: application/json", -- L12
-	"X-Custom-Header: MyValue", -- L13
-	"", -- L14
-	"{", -- L15
-	'    "name": "John Doe",', -- L16
-	'    "email": "john.doe@example.com"', -- L17
-	"}", -- L18
-	"", -- L19
-	"  ### Update a user (Note leading space on separator)", -- L20
-	"# PUT request, minimal", -- L21
-	"PUT http://localhost:3000/api/users/123", -- L22
-	"Content-Type: application/json", -- L23
-	"", -- L24
-	'{"status": "updated"}', -- L25
-	"", -- L26
-	"", -- L27
-	"### Delete a user", -- L28
-	"# DELETE request at the end", -- L29
-	"DELETE http://localhost:3000/api/users/456", -- L30
-	"Authorization: Bearer your_token_here", -- L31
-	"", -- L32
-	"", -- L33
-	"### Another GET for testing edge cases", -- L34
-	"GET https://httpbin.org/get?search=test", -- L35
-	"", -- L36
+local TEST_SINGLE_REQUEST = [[
+POST /submit?test=1 HTTP/1.1
+Content-Type: application/json
+User-Agent:   MyClient/1.0  
+Accept: */*
+X-Empty-Value: 
+X-No-Value:
+
+{
+  "name": "Test",
+  "value": 123
+}]]
+
+local REQUEST_WITH_VARS = "GET https://{{host}}/users"
+
+local INVALID_REQUEST = "Lorem Ipsum is simply dummy"
+
+local TEST_HTTP_CONTENT = [[
+# test.http - Example file for testing request parsing
+
+### Get all users
+# Simple GET request at the start
+GET http://localhost:3000/api/users
+Accept: application/json
+
+### Create a new user
+# POST request with headers and body
+POST https://httpbin.org/post
+Content-Type: application/json
+X-Custom-Header: MyValue
+
+{
+  "name": "John Doe",
+  "email": "john.doe@example.com"
 }
+]]
+
+local EXPECTED_REQUEST = [[
+# Simple GET request at the start
+GET http://localhost:3000/api/users
+Accept: application/json
+]]
 
 describe("hola.utils", function()
 	describe("get_request_under_cursor", function()
@@ -57,19 +61,126 @@ describe("hola.utils", function()
 			-- Clear buffer (optional, but good practice)
 			vim.cmd("%d _")
 			-- Set the content for the test
-			set_buffer_content(TEST_HTTP_CONTENT)
+			set_buffer_content(vim.split(TEST_HTTP_CONTENT, "\n"))
 			-- Reset cursor to a known state (optional)
 			set_cursor(1, 0)
 		end)
 
 		it("should return the first request when cursor is on the method line", function()
 			set_cursor(5, 0) -- Cursor on "GET http://localhost:3000/api/users"
-			local expected = vim.fn.trim([[
-# Simple GET request at the start
-GET http://localhost:3000/api/users
-Accept: application/json]])
+			local expected = vim.fn.trim(EXPECTED_REQUEST)
 			local actual = utils.get_request_under_cursor()
 			assert.are.equal(expected, actual)
+		end)
+	end)
+	describe("remove_comments", function()
+		it("removes comments", function()
+			local input = "# localhost\nPOST http://localhost"
+			local expected = "POST http://localhost"
+			assert.are.same(expected, utils.remove_comments(input))
+		end)
+
+		it("removes comments that stat with white characters", function()
+			local str0 = "	# This is an indented comment"
+			local str1 = "GET http://example.com/api/users"
+			local input = str0 .. "\n" .. str1
+
+			local expected = str1
+
+			assert.are.same(expected, utils.remove_comments(input))
+		end)
+
+		it("ignores when no comment is present", function()
+			local input = "GET http://example.com/api/users"
+			local expected = "GET http://example.com/api/users"
+			assert.are.same(expected, utils.remove_comments(input))
+		end)
+	end)
+	describe("compile_template", function()
+		it("Compiles a request", function()
+			local result = utils.compile_template(REQUEST_WITH_VARS, { { host = "localhost" } })
+			assert.equal(result, "GET https://localhost/users")
+		end)
+	end)
+	describe("parse_request", function()
+		it("parses a request", function()
+			local parsed = utils.parse_request(TEST_SINGLE_REQUEST)
+			assert.equal(parsed.method, "POST")
+			assert.equal(parsed.http_version, "HTTP/1.1")
+			assert.equal(parsed.path, "/submit?test=1")
+			assert.equal(parsed.body, '{\n  "name": "Test",\n  "value": 123\n}')
+			assert.equal(parsed.headers["accept"], "*/*")
+		end)
+	end)
+	describe("validate_request_text", function()
+		it("detects valid requests", function()
+			assert.truthy(utils.validate_request_text(TEST_SINGLE_REQUEST))
+		end)
+		it("detects invalid requests", function()
+			assert.is_not.True(utils.validate_request_text(INVALID_REQUEST))
+		end)
+	end)
+	describe("add_user_agent", function()
+		it("should add a user agent", function()
+			local opts = { headers = {} }
+			local output = utils.add_user_agent(opts)
+			assert.truthy(output.headers)
+			assert.is_true(output.headers["user-agent"] == "hola.nvim/0.1")
+		end)
+
+		it("should not add a user agent if user agent already present", function()
+			local opts = { headers = {} }
+			opts.headers["user-agent"] = "test"
+			local output = utils.add_user_agent(opts)
+			assert.is_true(output.headers["user-agent"] == "test")
+		end)
+	end)
+	describe("parse_headers", function()
+		it("should return a parsed_headers table", function()
+			local input = { headers = { "cache-control: private" } }
+			local output = utils.parse_headers(input)
+			assert.truthy(output.parsed_headers)
+		end)
+
+		it("should parse a header", function()
+			local input = { headers = { "cache-control: private" } }
+			local output = utils.parse_headers(input)
+			assert.are.same({ ["cache-control"] = "private" }, output.parsed_headers)
+		end)
+
+		it("should parse multiple headers", function()
+			local input = {
+				headers = {
+					"Content-Type: application/json",
+					"X-Request-ID: abc-123",
+					"Cache-Control: no-cache",
+				},
+			}
+			local expected_headers = {
+				["content-type"] = "application/json",
+				["x-request-id"] = "abc-123",
+				["cache-control"] = "no-cache",
+			}
+
+			local result = utils.parse_headers(input)
+			assert.is_not_nil(result.parsed_headers)
+			assert.are.same(expected_headers, result.parsed_headers)
+		end)
+	end)
+	describe("detect_filetype", function()
+		it("should return unknown if Content-Type is missing", function()
+			local input = { parsed_headers = {} }
+			assert.are.same("unknown", utils.detect_filetype(input).filetype)
+		end)
+
+		it("should identify json", function()
+			local input = { parsed_headers = { ["Content-Type"] = "application/json; charset=utf-8" } }
+			assert.are.same("json", utils.detect_filetype(input).filetype)
+		end)
+
+		it("should identify javascript", function()
+			local input = { parsed_headers = { ["Content-Type"] = "application/javascript" } }
+			assert.are.same("javascript", utils.detect_filetype(input).filetype)
 		end)
 	end)
 end)

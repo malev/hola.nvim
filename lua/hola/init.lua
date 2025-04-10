@@ -1,55 +1,81 @@
-local M = {}
-
 local request = require("hola.request")
 local utils = require("hola.utils")
 local ui = require("hola.ui")
 local dotenv = require("hola.dotenv")
 
-local state = {}
+local M = {}
 
-local function preflight(request_text)
-	if not utils.validate_request_text(request_text) then
-		vim.notify("Invalid request format.", vim.log.levels.ERROR)
+function M.display_metadata()
+	ui.display_metadata()
+end
+
+function M.close()
+	ui.close()
+end
+
+function M.toggle()
+	ui.toggle()
+end
+
+function M.run_request_under_cursor()
+	-- 1. Get request text
+	local request_text = utils.get_request_under_cursor()
+	if not request_text then
+		vim.notify("No request found.", vim.log.levels.ERROR)
 		return
 	end
 
-	local sources = { dotenv.load(), vim.env }
+	-- 2. Basic validation (optional, parse might handle some)
+	if not utils.validate_request_text(request_text) then
+		vim.notify("Invalid request structure.", vim.log.levels.ERROR)
+		return
+	end
 
-	vim.notify("Sending...")
-	state["response"] = request.process(request_text, sources)
-	ui.show_body(state)
+	local dotenv_vars = dotenv.load() -- Returns {} if none found
+	local compiled_text = utils.compile_template(request_text, { dotenv_vars, vim.env })
+	local request_options = utils.parse_request(compiled_text)
+	if not request_options then
+		vim.notify("Failed to parse request options.", vim.log.levels.ERROR)
+		return
+	end
+
+	local function on_request_finished(result)
+		-- Check if the request resulted in an error or success
+		if result.error then
+			print("there was an error", vim.inspect(result))
+		else
+			ui.display_response(result)
+		end
+	end
+
+	request.execute(request_options, on_request_finished)
 end
 
-M.setup = function(opts)
-	opts = opts or {}
-end
-
-M.send = function()
-	local request_text = utils.get_request_under_cursor()
-	preflight(request_text)
-end
-
-M.send_selected = function()
+M.run_selected_request = function()
 	local request_text, err = utils.get_visual_selection()
-
 	if err then
 		vim.notify("Failed retrieving content." .. err, vim.log.levels.ERROR)
 		return
 	end
 
-	preflight(request_text)
-end
+	local dotenv_vars = dotenv.load() -- Returns {} if none found
+	local compiled_text = utils.compile_template(request_text, { dotenv_vars, vim.env })
+	local request_options = utils.parse_request(compiled_text)
+	if not request_options then
+		vim.notify("Failed to parse request options.", vim.log.levels.ERROR)
+		return
+	end
 
-M.close_window = function()
-	ui.close_window(state)
-end
+	local function on_request_finished(result)
+		-- Check if the request resulted in an error or success
+		if result.error then
+			vim.notify("Request failed", vim.log.levels.INFO)
+		else
+			ui.display_response(result)
+		end
+	end
 
-M.show_window = function()
-	ui.show_window(state)
-end
-
-M.maximize_window = function()
-	ui.maximize_window(state)
+	request.execute(request_options, on_request_finished)
 end
 
 return M

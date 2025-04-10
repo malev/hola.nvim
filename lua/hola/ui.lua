@@ -1,6 +1,258 @@
 local popup = require("plenary.popup")
 
-local ui = {}
+local M = {}
+
+local state = {
+	last_response = nil, -- Store the full result object from request.lua
+	response_win_id = nil, -- Window ID for the split
+	response_buf_handle = nil, -- Buffer handle for the split
+	current_view = "body", -- Track what's currently shown in the split ('body' or 'headers')
+}
+
+--- Sets the content and filetype of a buffer.
+-- @param buf_handle (integer) The buffer handle.
+-- @param content_lines (table) List of strings to set as buffer content.
+-- @param filetype (string) The filetype to set.
+local function _set_buffer_content(buf_handle, content_lines, filetype)
+	if not vim.api.nvim_buf_is_valid(buf_handle) then
+		return
+	end
+
+	-- Make buffer modifiable, clear it, then make it unmodifiable again
+	vim.api.nvim_set_option_value("modifiable", true, { buf = buf_handle })
+	vim.api.nvim_buf_set_lines(buf_handle, 0, -1, false, content_lines)
+	vim.api.nvim_set_option_value("filetype", filetype, { buf = buf_handle })
+	vim.api.nvim_set_option_value("modifiable", false, { buf = buf_handle })
+	vim.api.nvim_set_option_value("modified", false, { buf = buf_handle }) -- Reset modified status
+end
+
+--- Clears and prepares the response buffer for new content.
+-- @param buf_handle (integer) The buffer handle.
+-- @return (boolean)
+local function _prepare_buffer(buf_handle)
+	if not vim.api.nvim_buf_is_valid(buf_handle) then
+		return false
+	end
+
+	_set_buffer_content(buf_handle, {}, "text")
+	return true
+end
+
+--- Finds the existing response split window/buffer or creates new ones.
+-- @return (table | nil) { win_id, buf_handle } or nil if creation fails.
+local function _find_or_create_response_window()
+	-- Check if stored handles are still valid
+	if
+		state.response_win_id
+		and vim.api.nvim_win_is_valid(state.response_win_id)
+		and state.response_buf_handle
+		and vim.api.nvim_buf_is_valid(state.response_buf_handle)
+	then
+		print("[ui] Reusing existing response window/buffer.")
+		return { win_id = state.response_win_id, buf_handle = state.response_buf_handle }
+	end
+
+	print("[ui] Creating new response window/buffer...")
+	-- Window/Buffer was closed or never created, create anew
+	state.response_win_id = nil
+	state.response_buf_handle = nil
+
+	-- Find current win
+	local current_win = vim.api.nvim_get_current_win()
+
+	-- Create a dedicated buffer
+	local buf_handle = vim.api.nvim_create_buf(false, true) -- Not listed, scratch buffer
+	if not buf_handle then
+		print("[ui] Error: Failed to create buffer.")
+		return nil
+	end
+
+	vim.api.nvim_set_option_value("bufhidden", "wipe", { buf = buf_handle })
+	vim.api.nvim_set_option_value("buftype", "nofile", { buf = buf_handle })
+	vim.api.nvim_set_option_value("swapfile", false, { buf = buf_handle })
+	vim.api.nvim_buf_set_name(buf_handle, "REST Response")
+
+	local win_opts = {
+		split = "right",
+		win = 0,
+	}
+
+	-- Create the split window
+	local win_id = vim.api.nvim_open_win(buf_handle, false, win_opts)
+
+	-- Go back to original window unless configured otherwise
+	vim.api.nvim_set_current_win(current_win)
+
+	-- Store the new handles
+	state.response_win_id = win_id
+	state.response_buf_handle = buf_handle
+
+	return { win_id = win_id, buf_handle = buf_handle }
+end
+
+--- Formats parsed headers into a list of strings for display.
+-- @param parsed_headers (table) Table of lowercase_key = value/list_of_values.
+-- @return (table) List of strings, "Key: Value".
+local function _format_headers(parsed_headers)
+	local lines = {}
+	-- Sort keys alphabetically for consistent display
+	local sorted_keys = {}
+	for k, _ in pairs(parsed_headers) do
+		table.insert(sorted_keys, k)
+	end
+	table.sort(sorted_keys)
+
+	for _, key in ipairs(sorted_keys) do
+		local value = parsed_headers[key]
+		local display_key = key:gsub("-(%l)", function(c)
+			return "-" .. c:upper()
+		end):gsub("^(%l)", string.upper) -- Title-Case
+
+		if type(value) == "table" then -- Handle multi-value headers
+			for _, v_item in ipairs(value) do
+				table.insert(lines, display_key .. ": " .. tostring(v_item))
+			end
+		else
+			table.insert(lines, display_key .. ": " .. tostring(value))
+		end
+	end
+	return lines
+end
+
+--- Creates the summary line for the top of the response buffer.
+-- @param result (table) The processed response object.
+-- @return (string) Formatted summary line.
+local function _create_summary_line(result)
+	local status_text = result.status or "N/A"
+	local time_text = result.elapsed_ms and string.format("%.0f ms", result.elapsed_ms) or "N/A"
+	-- Add size later if calculated
+	return string.format("--> [%s] [%s]", status_text, time_text)
+end
+
+--- Creates the summary for the top of the information buffer.
+-- @param result (table) The processed response object.
+-- @return (table) Formatted summary in a table.
+local function _create_summary(result)
+	local status_text = result.status or "N/A"
+	local time_text = result.elapsed_ms and string.format("%.0f ms", result.elapsed_ms) or "N/A"
+
+	return { "Status Code: " .. status_text, "Elapsed Time: " .. time_text }
+end
+
+--- Main function to display a successful response. Shows body by default.
+-- @param result (table) Processed response object from request.lua.
+function M.display_response(result)
+	print("[ui] Displaying successful response...")
+	state.last_response = result -- Cache the full response
+
+	local win_info = _find_or_create_response_window()
+	if not win_info then
+		vim.notify("Failed to create response window", vim.log.levels.ERROR)
+		return
+	end -- Failed to get/create window
+
+	local buf_handle = win_info.buf_handle
+	if not _prepare_buffer(buf_handle) then
+		vim.notify("Failed to create response buffer", vim.log.levels.ERROR)
+		return
+	end
+
+	local summary_line = _create_summary_line(result)
+	vim.notify(summary_line, vim.log.levels.INFO)
+
+	local body_lines = split(result.body or "", "\n")
+	_prepare_buffer(buf_handle)
+	_set_buffer_content(buf_handle, body_lines, result.filetype or "text")
+	state.current_view = "body" -- Update state
+end
+
+--- Main function to display metadata.
+function M.display_metadata()
+	if state.current_view == "metadata" then
+		-- Already displaying metadata
+		return
+	end
+
+	if state.last_response == nil then
+		vim.notify("No response to show", vim.log.levels.WARNING)
+		return
+	end
+
+	local win_info = _find_or_create_response_window()
+
+	if not win_info then
+		vim.notify("Failed to create response window", vim.log.levels.ERROR)
+		return
+	end -- Failed to get/create window
+
+	local buf_handle = win_info.buf_handle
+	if not _prepare_buffer(buf_handle) then
+		vim.notify("Failed to create response buffer", vim.log.levels.ERROR)
+		return
+	end
+
+	local metadata_table = _create_summary(state.last_response)
+	local headers = _format_headers(state.last_response.parsed_headers)
+
+	table.insert(metadata_table, "")
+	table.insert(metadata_table, "-- Headers --")
+	table.insert(metadata_table, "")
+	vim.list_extend(metadata_table, headers)
+
+	_prepare_buffer(buf_handle)
+	_set_buffer_content(buf_handle, metadata_table, "text")
+	state.current_view = "metadata" -- Update state
+end
+
+function M.toggle()
+	if state.last_response == nil then
+		vim.notify("Nothing to display", vim.log.levels.WARNING)
+		return -- No response to toggle
+	end
+
+	if state.current_view == "metadata" then
+		M.display_response(state.last_response)
+		return
+	end
+
+	-- I want to be explicit
+	if state.current_view == "body" then
+		M.display_metadata()
+		return
+	end
+end
+
+function M.close()
+	local win_id = state.response_win_id
+	if not win_id then
+		vim.notify("No response window ID stored. Nothing to close", vim.log.levels.WARNING)
+		return
+	end
+
+	-- Use pcall for safety when calling API functions
+	local ok, closed_or_err = pcall(function()
+		-- 3. Check if the window is actually still valid before trying to close
+		if vim.api.nvim_win_is_valid(win_id) then
+			-- 4. Close the window (false means don't force close, like :close)
+			--    If the buffer had unsaved changes (unlikely for scratch), this would fail.
+			--    Use true (like :close!) if you always want it gone.
+			vim.api.nvim_win_close(win_id, false)
+			return true -- Indicate close was attempted
+		else
+			vim.notify("Invalid win_id", vim.log.levels.ERROR)
+			return false -- Indicate window was already gone
+		end
+	end)
+
+	if not ok then
+		vim.notify("Error trying to close response window: " .. tostring(closed_or_err), vim.log.levels.ERROR)
+		return
+	end
+
+	state.response_win_id = nil
+	state.response_buf_handle = nil
+	state.current_view = "body" -- Reset view state too
+end
 
 local function has_resp(state)
 	return state["response"] ~= nil
@@ -40,7 +292,7 @@ local function build_metadata_content(state, maximize)
 	return data
 end
 
-function ui.create_window(opts, cb)
+function M.create_window(opts, cb)
 	local height = 20
 	local width = 30
 	local borderchars = { "─", "│", "─", "│", "╭", "╮", "╯", "╰" }
@@ -61,12 +313,7 @@ function ui.create_window(opts, cb)
 	return { buf = bufnr, win = win_id }
 end
 
-function ui.show_metadata(state)
-	local values = ui.create_window(build_metadata_content(state), function() end)
-	state.metadata = values
-end
-
-function ui.show_body(state)
+function M.show_body(state)
 	if not has_resp(state) then
 		vim.notify("No response to show", vim.log.warning)
 		return
@@ -97,7 +344,7 @@ function ui.show_body(state)
 	return state
 end
 
-function ui.hide(state)
+function M.hide(state)
 	if not state.ui.visible then
 		return
 	end
@@ -106,23 +353,23 @@ function ui.hide(state)
 	state.ui.visible = false
 end
 
-function ui.close_window(state)
+function M.close_window(state)
 	if state["metadata"] ~= nil and type(state["metadata"]) == "table" then
 		vim.api.nvim_win_close(state["metadata"].win, true)
 		state["metadata"] = nil
 	end
 end
 
-function ui.show_window(state)
+function M.show_window(state)
 	if state["metadata"] ~= nil and type(state["metadata"]) == "table" then
 		-- TODO: Validate the windows is still open
 		return
 	end
-	ui.show_metadata(state)
+	M.show_metadata(state)
 end
 
-function ui.maximize_window(state)
-	ui.close_window(state)
+function M.maximize_window(state)
+	M.close_window(state)
 
 	local bufnr = vim.api.nvim_create_buf(false, true) -- false: not listed, true: scratch buffer
 	vim.api.nvim_set_current_buf(bufnr)
@@ -130,4 +377,24 @@ function ui.maximize_window(state)
 	return bufnr
 end
 
-return ui
+--- Clears the content of the buffer associated with the given feedback information.
+---
+--- @param feedback_info table: A table containing the buffer and window information:
+---   - buf (number): The buffer number. If not provided, it will be retrieved from the window.
+---   - win (number): The window number.
+---
+--- @return table: A table containing the buffer and window information:
+---   - buf (number): The buffer number.
+---   - win (number): The window number.
+function M.clear_sending_feedback(feedback_info)
+	local buf = feedback_info.buf
+	local win = feedback_info.win
+	if not buf then
+		buf = vim.api.nvim_win_get_buf(win)
+	end
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, {})
+
+	return { buf = buf, win = win }
+end
+
+return M
