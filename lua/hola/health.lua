@@ -1,5 +1,6 @@
-local error = vim.health.error or vim.health.report_error
-local ok = vim.health.ok or vim.health.report_ok
+-- luacheck: ignore 212
+local error = vim.health.error
+local ok = vim.health.ok
 
 local M = {}
 
