@@ -1,3 +1,4 @@
 deps/*
 result/
 .DS_Store
+.opencode
