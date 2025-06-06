@@ -114,6 +114,8 @@ If no `.env` file is found or if a specific variable is not defined in the `.env
 
 Want to contribute to `hola.nvim`? Awesome! Here's how to get started:
 
+*Note: If you are using nix and home-manager, try to use the native, unwrapped `nvim` binary for development.*
+
 1.  Clone this repo: `git clone <your_repo_url>`
 2.  Open Neovim in the project root: `nvim -u scripts/init.lua examples.http`
 3.  Run the tests: `make test` (Let's make sure everything is saying "¡Hola!" correctly!)

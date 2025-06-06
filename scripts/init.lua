@@ -1,9 +1,6 @@
 -- Add current directory to 'runtimepath' to be able to use 'lua' files
+vim.cmd("set rtp+=deps/plenary.nvim")
 vim.cmd([[let &rtp.=','.getcwd()]])
-
-if #vim.api.nvim_list_uis() == 0 then
-	vim.cmd("set rtp+=deps/plenary.nvim")
-end
 
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
