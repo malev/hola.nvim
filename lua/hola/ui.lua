@@ -18,11 +18,8 @@ local function _set_buffer_content(buf_handle, content_lines, filetype)
 		return
 	end
 
-	-- Make buffer modifiable, clear it, then make it unmodifiable again
-	vim.api.nvim_set_option_value("modifiable", true, { buf = buf_handle })
 	vim.api.nvim_buf_set_lines(buf_handle, 0, -1, false, content_lines)
 	vim.api.nvim_set_option_value("filetype", filetype, { buf = buf_handle })
-	vim.api.nvim_set_option_value("modifiable", false, { buf = buf_handle })
 	vim.api.nvim_set_option_value("modified", false, { buf = buf_handle }) -- Reset modified status
 end
 
