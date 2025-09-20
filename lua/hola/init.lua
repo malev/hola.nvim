@@ -2,8 +2,15 @@ local request = require("hola.request")
 local utils = require("hola.utils")
 local ui = require("hola.ui")
 local dotenv = require("hola.dotenv")
+local config = require("hola.config")
 
 local M = {}
+
+--- Setup function to initialize hola.nvim with user configuration
+-- @param opts (table|nil) User configuration options
+function M.setup(opts)
+	config.setup(opts)
+end
 
 function M.display_metadata()
 	ui.display_metadata()
@@ -15,6 +22,16 @@ end
 
 function M.toggle()
 	ui.toggle()
+end
+
+--- Toggle JSON formatting between formatted and raw views
+function M.toggle_json_format()
+	ui.toggle_json_format()
+end
+
+--- Validate current JSON response
+function M.validate_json()
+	ui.validate_json()
 end
 
 function M.run_request_under_cursor()

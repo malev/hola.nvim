@@ -1,4 +1,6 @@
 local popup = require("plenary.popup")
+local json = require("hola.json")
+local config = require("hola.config")
 
 local M = {}
 
@@ -7,7 +9,38 @@ local state = {
 	response_win_id = nil, -- Window ID for the split
 	response_buf_handle = nil, -- Buffer handle for the split
 	current_view = "body", -- Track what's currently shown in the split ('body' or 'headers')
+	is_json_formatted = false, -- Track if current JSON is formatted
+	raw_json_body = nil, -- Store raw JSON body when formatted
 }
+
+--- Formats JSON content if applicable and enabled
+-- @param body_content (string) Raw body content
+-- @param filetype (string) Detected filetype
+-- @return (string, boolean) Processed content and whether it was formatted
+local function _process_json_content(body_content, filetype)
+	if filetype ~= "json" then
+		return body_content, false
+	end
+
+	local json_config = config.get_json()
+	if not json_config.auto_format then
+		return body_content, false
+	end
+
+	local formatted, err = json.format(body_content, {
+		indent_size = json_config.indent_size,
+		sort_keys = json_config.sort_keys,
+		compact_arrays = json_config.compact_arrays,
+		max_array_length = json_config.max_array_length,
+	})
+
+	if formatted then
+		return formatted, true
+	else
+		vim.notify("JSON formatting failed: " .. (err or "unknown error"), vim.log.levels.WARN)
+		return body_content, false
+	end
+end
 
 --- Sets the content and filetype of a buffer.
 -- @param buf_handle (integer) The buffer handle.
@@ -21,6 +54,17 @@ local function _set_buffer_content(buf_handle, content_lines, filetype)
 	vim.api.nvim_buf_set_lines(buf_handle, 0, -1, false, content_lines)
 	vim.api.nvim_set_option_value("filetype", filetype, { buf = buf_handle })
 	vim.api.nvim_set_option_value("modified", false, { buf = buf_handle }) -- Reset modified status
+
+	-- Set JSON-specific options if applicable
+	if filetype == "json" then
+		local json_config = config.get_json()
+		if json_config.enable_folding then
+			vim.api.nvim_set_option_value("foldmethod", "syntax", { buf = buf_handle })
+			vim.api.nvim_set_option_value("foldlevel", 2, { buf = buf_handle })
+		end
+		-- Set conceallevel for better JSON visualization
+		vim.api.nvim_set_option_value("conceallevel", 0, { buf = buf_handle })
+	end
 end
 
 --- Clears and prepares the response buffer for new content.
@@ -157,7 +201,19 @@ function M.display_response(result)
 	local summary_line = _create_summary_line(result)
 	vim.notify(summary_line, vim.log.levels.INFO)
 
-	local body_lines = split(result.body or "", "\n")
+	-- Process JSON content for formatting
+	local body_content = result.body or ""
+	local processed_content, was_formatted = _process_json_content(body_content, result.filetype)
+
+	-- Store formatting state and raw content
+	state.is_json_formatted = was_formatted
+	if was_formatted then
+		state.raw_json_body = body_content
+	else
+		state.raw_json_body = nil
+	end
+
+	local body_lines = split(processed_content, "\n")
 	_prepare_buffer(buf_handle)
 	_set_buffer_content(buf_handle, body_lines, result.filetype or "text")
 	state.current_view = "body" -- Update state
@@ -249,6 +305,85 @@ function M.close()
 	state.response_win_id = nil
 	state.response_buf_handle = nil
 	state.current_view = "body" -- Reset view state too
+	state.is_json_formatted = false -- Reset JSON state
+	state.raw_json_body = nil
+end
+
+--- Toggles JSON formatting between formatted and raw views
+function M.toggle_json_format()
+	if not state.last_response then
+		vim.notify("No response to format", vim.log.levels.WARNING)
+		return
+	end
+
+	if state.last_response.filetype ~= "json" then
+		vim.notify("Current response is not JSON", vim.log.levels.WARNING)
+		return
+	end
+
+	if state.current_view ~= "body" then
+		vim.notify("JSON formatting only available in body view", vim.log.levels.WARNING)
+		return
+	end
+
+	local win_info = _find_or_create_response_window()
+	if not win_info then
+		vim.notify("Failed to create response window", vim.log.levels.ERROR)
+		return
+	end
+
+	local buf_handle = win_info.buf_handle
+	local new_content
+	local new_formatted_state
+
+	if state.is_json_formatted then
+		-- Switch to raw JSON
+		new_content = state.raw_json_body or state.last_response.body or ""
+		new_formatted_state = false
+		vim.notify("Showing raw JSON", vim.log.levels.INFO)
+	else
+		-- Switch to formatted JSON
+		local body_content = state.raw_json_body or state.last_response.body or ""
+		local formatted, err = json.format(body_content, config.get_json())
+		if formatted then
+			new_content = formatted
+			new_formatted_state = true
+			if not state.raw_json_body then
+				state.raw_json_body = body_content
+			end
+			vim.notify("Showing formatted JSON", vim.log.levels.INFO)
+		else
+			vim.notify("JSON formatting failed: " .. (err or "unknown error"), vim.log.levels.ERROR)
+			return
+		end
+	end
+
+	-- Update buffer content
+	local content_lines = split(new_content, "\n")
+	_set_buffer_content(buf_handle, content_lines, "json")
+	state.is_json_formatted = new_formatted_state
+end
+
+--- Validates current JSON response
+function M.validate_json()
+	if not state.last_response then
+		vim.notify("No response to validate", vim.log.levels.WARNING)
+		return
+	end
+
+	if state.last_response.filetype ~= "json" then
+		vim.notify("Current response is not JSON", vim.log.levels.WARNING)
+		return
+	end
+
+	local body_content = state.raw_json_body or state.last_response.body or ""
+	local is_valid, error_msg = json.validate(body_content)
+
+	if is_valid then
+		vim.notify("JSON is valid", vim.log.levels.INFO)
+	else
+		vim.notify("JSON validation failed: " .. (error_msg or "unknown error"), vim.log.levels.ERROR)
+	end
 end
 
 local function has_resp(state)

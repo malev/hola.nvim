@@ -30,6 +30,20 @@ end, {
 	desc = "Close response window",
 })
 
+vim.api.nvim_create_user_command("HolaFormatJson", function()
+	require("hola").toggle_json_format()
+end, {
+	nargs = "*",
+	desc = "Toggle JSON formatting between formatted and raw views",
+})
+
+vim.api.nvim_create_user_command("HolaValidateJson", function()
+	require("hola").validate_json()
+end, {
+	nargs = "*",
+	desc = "Validate current JSON response",
+})
+
 vim.api.nvim_create_user_command("HolaCloseWindow", function()
 	vim.print("Deprecated. Try :HolaToggle instead.", vim.log.levels.WARN)
 end, {

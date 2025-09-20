@@ -10,14 +10,27 @@ Just add this to your `plugins` table in your Neovim configuration (using your p
 {
   "malev/hola.nvim",
   dependencies = { "nvim-lua/plenary.nvim" },
+  config = function()
+    require("hola").setup({
+      -- Optional: customize JSON formatting
+      json = {
+        auto_format = true,     -- Auto-format JSON responses
+        indent_size = 2,        -- Spaces for indentation
+        sort_keys = true,       -- Sort object keys alphabetically
+      },
+    })
+  end,
 }
 ```
 
 *Commands:*
 
   * `:HolaSend`: Unleash the request! 🚀
-  * `:HolaShowWindow`: Peek behind the curtain (see those headers!). 👀
-  * `:HolaMaximizeWindow`: Go full screen for header inspection. 🔍
+  * `:HolaSendSelected`: Send visually selected request block
+  * `:HolaToggle`: Toggle between response body and metadata view
+  * `:HolaClose`: Close response window
+  * `:HolaFormatJson`: Toggle JSON formatting (formatted ↔ raw) ✨
+  * `:HolaValidateJson`: Validate current JSON response syntax 🔍
 
 ## Example: Let's Send Some Requests! 📬
 
@@ -44,8 +57,10 @@ DELETE https://jsonplaceholder.typicode.com/posts/1
 
 **Need to dive deeper?**
 
-* `:HolaShowWindow`: Want to see the raw headers and metadata? This command will pop open a window with all the juicy details.
-* `:HolaMaximizeWindow`: Overwhelmed by headers? Maximize the metadata window for a better view.
+* `:HolaToggle`: Switch between response body and metadata/headers view
+* `:HolaClose`: Close the response window when you're done
+* `:HolaFormatJson`: Toggle between beautifully formatted and raw JSON (JSON responses only)
+* `:HolaValidateJson`: Check if your JSON response is syntactically valid
 
 ## Recommended Keymaps: Supercharge Your Workflow! ⚡
 
@@ -57,10 +72,75 @@ local map = vim.keymap.set
 -- Hola keymaps - Send it! 🚀
 map("n", "<leader>hs", "<cmd>:HolaSend<cr>", { desc = "Send request" })
 map("v", "<leader>hs", "<cmd>:HolaSendSelected<cr>", { desc = "Send selected request" })
--- Hola keymaps - Peek at the details 👀
-map({ "n", "v" }, "<leader>hw", "<cmd>:HolaShowWindow<cr>", { desc = "Show metadata window" })
--- Hola keymaps - Maximize for clarity 🔍
-map({ "n", "v" }, "<leader>hm", "<cmd>:HolaMaximizeWindow<cr>", { desc = "Maximize metadata window" })
+-- Hola keymaps - Response navigation 👀
+map({ "n", "v" }, "<leader>ht", "<cmd>:HolaToggle<cr>", { desc = "Toggle response body/metadata" })
+map({ "n", "v" }, "<leader>hc", "<cmd>:HolaClose<cr>", { desc = "Close response window" })
+-- Hola keymaps - JSON tools ✨
+map({ "n", "v" }, "<leader>hf", "<cmd>:HolaFormatJson<cr>", { desc = "Toggle JSON formatting" })
+map({ "n", "v" }, "<leader>hv", "<cmd>:HolaValidateJson<cr>", { desc = "Validate JSON" })
+```
+
+## Beautiful JSON Responses with Smart Formatting! ✨
+
+`hola.nvim` automatically detects JSON responses and provides powerful formatting and syntax highlighting features to make working with JSON a breeze.
+
+### ✅ **Auto-Formatting**
+
+JSON responses are automatically formatted with:
+- **Smart indentation** (2 spaces by default)
+- **Sorted keys** for consistent output
+- **Compact arrays** for simple values: `[1, 2, 3, 4]`
+- **Expanded arrays** for complex structures:
+  ```json
+  [
+    {
+      "name": "John"
+    },
+    {
+      "name": "Jane"
+    }
+  ]
+  ```
+
+### 🎛️ **Interactive JSON Tools**
+
+- **`:HolaFormatJson`** - Toggle between formatted and raw JSON views
+- **`:HolaValidateJson`** - Instant JSON syntax validation
+- **Enhanced syntax highlighting** with proper JSON filetype detection
+- **JSON folding support** for navigating large responses
+
+### ⚙️ **Configuration**
+
+Customize JSON formatting behavior in your Neovim config:
+
+```lua
+require("hola").setup({
+  json = {
+    auto_format = true,        -- Auto-format JSON responses
+    indent_size = 2,           -- Spaces for indentation
+    sort_keys = true,          -- Sort object keys alphabetically
+    compact_arrays = true,     -- Keep simple arrays on one line
+    max_array_length = 5,      -- Max items before expanding array
+    enable_folding = true,     -- Enable JSON folding in buffer
+  },
+})
+```
+
+**Example formatted output:**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "John Doe",
+      "posts": [1, 2, 3]
+    }
+  ],
+  "meta": {
+    "count": 1,
+    "status": "success"
+  }
+}
 ```
 
 ## Power Up Your Requests with `.env` and Environment Variables! ⚙️
