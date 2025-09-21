@@ -58,12 +58,16 @@ local function _set_buffer_content(buf_handle, content_lines, filetype)
 	-- Set JSON-specific options if applicable
 	if filetype == "json" then
 		local json_config = config.get_json()
-		if json_config.enable_folding then
-			vim.api.nvim_set_option_value("foldmethod", "syntax", { buf = buf_handle })
-			vim.api.nvim_set_option_value("foldlevel", 2, { buf = buf_handle })
+		-- Both foldmethod/foldlevel and conceallevel are window-local options
+		local wins = vim.fn.win_findbuf(buf_handle)
+		for _, win_id in ipairs(wins) do
+			if json_config.enable_folding then
+				vim.api.nvim_set_option_value("foldmethod", "syntax", { win = win_id })
+				vim.api.nvim_set_option_value("foldlevel", 2, { win = win_id })
+			end
+			-- Set conceallevel for better JSON visualization
+			vim.api.nvim_set_option_value("conceallevel", 0, { win = win_id })
 		end
-		-- Set conceallevel for better JSON visualization
-		vim.api.nvim_set_option_value("conceallevel", 0, { buf = buf_handle })
 	end
 end
 
@@ -312,17 +316,17 @@ end
 --- Toggles JSON formatting between formatted and raw views
 function M.toggle_json_format()
 	if not state.last_response then
-		vim.notify("No response to format", vim.log.levels.WARNING)
+		vim.notify("No response to format", vim.log.levels.WARN)
 		return
 	end
 
 	if state.last_response.filetype ~= "json" then
-		vim.notify("Current response is not JSON", vim.log.levels.WARNING)
+		vim.notify("Current response is not JSON", vim.log.levels.WARN)
 		return
 	end
 
 	if state.current_view ~= "body" then
-		vim.notify("JSON formatting only available in body view", vim.log.levels.WARNING)
+		vim.notify("JSON formatting only available in body view", vim.log.levels.WARN)
 		return
 	end
 
