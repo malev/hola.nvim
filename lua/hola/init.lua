@@ -85,8 +85,9 @@ function M.run_request_under_cursor()
 				hl_mode = "combine",
 			})
 		else
-			-- Show success status with status code
-			local status_text = "✔️Response: " .. (result.status or "Unknown")
+			-- Show success status with status code and elapsed time
+			local elapsed_text = result.elapsed_ms and string.format("%.0fms", result.elapsed_ms) or "?ms"
+			local status_text = "✔️Response: " .. (result.status or "Unknown") .. " (" .. elapsed_text .. ")"
 			vim.api.nvim_buf_set_extmark(0, ns_id, line, col, {
 				virt_text = { { status_text, "Comment" } },
 				virt_text_pos = "eol",

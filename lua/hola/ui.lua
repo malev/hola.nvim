@@ -164,16 +164,6 @@ local function _format_headers(parsed_headers)
 	return lines
 end
 
---- Creates the summary line for the top of the response buffer.
--- @param result (table) The processed response object.
--- @return (string) Formatted summary line.
-local function _create_summary_line(result)
-	local status_text = result.status or "N/A"
-	local time_text = result.elapsed_ms and string.format("%.0f ms", result.elapsed_ms) or "N/A"
-	-- Add size later if calculated
-	return string.format("--> [%s] [%s]", status_text, time_text)
-end
-
 --- Creates the summary for the top of the information buffer.
 -- @param result (table) The processed response object.
 -- @return (table) Formatted summary in a table.
@@ -201,9 +191,6 @@ function M.display_response(result)
 		vim.notify("Failed to create response buffer", vim.log.levels.ERROR)
 		return
 	end
-
-	local summary_line = _create_summary_line(result)
-	vim.notify(summary_line, vim.log.levels.INFO)
 
 	-- Process JSON content for formatting
 	local body_content = result.body or ""
