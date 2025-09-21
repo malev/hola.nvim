@@ -84,7 +84,6 @@ function M.run_request_under_cursor()
 				virt_text_pos = "eol",
 				hl_mode = "combine",
 			})
-			print("there was an error", vim.inspect(result))
 		else
 			-- Show success status with status code
 			local status_text = "✔️Response: " .. (result.status or "Unknown")

@@ -89,11 +89,11 @@ local function _find_or_create_response_window()
 		and state.response_buf_handle
 		and vim.api.nvim_buf_is_valid(state.response_buf_handle)
 	then
-		print("[ui] Reusing existing response window/buffer.")
+		-- Debug: Reusing existing response window/buffer
 		return { win_id = state.response_win_id, buf_handle = state.response_buf_handle }
 	end
 
-	print("[ui] Creating new response window/buffer...")
+	-- Debug: Creating new response window/buffer
 	-- Window/Buffer was closed or never created, create anew
 	state.response_win_id = nil
 	state.response_buf_handle = nil
@@ -104,7 +104,7 @@ local function _find_or_create_response_window()
 	-- Create a dedicated buffer
 	local buf_handle = vim.api.nvim_create_buf(false, true) -- Not listed, scratch buffer
 	if not buf_handle then
-		print("[ui] Error: Failed to create buffer.")
+		vim.notify("Failed to create buffer", vim.log.levels.ERROR)
 		return nil
 	end
 
@@ -183,7 +183,7 @@ end
 --- Main function to display a successful response. Shows body by default.
 -- @param result (table) Processed response object from request.lua.
 function M.display_response(result)
-	print("[ui] Displaying successful response...")
+	-- Debug: Displaying successful response
 	state.last_response = result -- Cache the full response
 
 	local win_info = _find_or_create_response_window()
@@ -213,7 +213,7 @@ function M.display_response(result)
 		state.raw_json_body = nil
 	end
 
-	local body_lines = split(processed_content, "\n")
+	local body_lines = vim.split(processed_content, "\n")
 	_prepare_buffer(buf_handle)
 	_set_buffer_content(buf_handle, body_lines, result.filetype or "text")
 	state.current_view = "body" -- Update state
@@ -359,7 +359,7 @@ function M.toggle_json_format()
 	end
 
 	-- Update buffer content
-	local content_lines = split(new_content, "\n")
+	local content_lines = vim.split(new_content, "\n")
 	_set_buffer_content(buf_handle, content_lines, "json")
 	state.is_json_formatted = new_formatted_state
 end

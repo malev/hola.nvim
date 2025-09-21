@@ -565,7 +565,7 @@ function M.parse_headers(response)
 		else
 			-- Line did not contain a colon, or was malformed? Ignore it.
 			-- This might also include the initial HTTP status line if present in the list.
-			print("Ignoring malformed header line or status line: ", header_line)
+			-- Ignoring malformed header line
 		end -- End split check
 	end -- End loop
 	return response

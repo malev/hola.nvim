@@ -19,7 +19,7 @@ local function find_dotenv_in_cwd()
 	local stat = vim.loop.fs_stat(dotenv_path)
 	if not stat or stat.type ~= "file" then
 		-- File does not exist or is not a regular file
-		vim.notify("No .env file found in current directory: " .. cwd, vim.log.levels.WARN, { title = "DotEnv" })
+		vim.notify("No .env file found in current directory: " .. cwd, vim.log.levels.DEBUG, { title = "DotEnv" })
 		return nil -- Indicate not found or invalid
 	end
 

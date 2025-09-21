@@ -52,7 +52,7 @@ function M.execute(options, on_complete)
 				if response.exit == 28 then
 					err_msg = "Request Timed Out"
 				end
-				print("[request] Request failed:", err_msg)
+				-- Request failure is already handled by error field
 				response.error = err_msg -- Add error field
 				-- Call the final callback passed to M.execute
 				vim.schedule(function()
@@ -74,11 +74,11 @@ function M.execute(options, on_complete)
 	local job_id = curl.request(curl_options)
 
 	if not job_id then
-		print("[request] Failed to start curl job!")
+		vim.notify("Failed to start HTTP request", vim.log.levels.ERROR)
 		-- Immediately call back with an error if job didn't even start
 		on_complete({ error = "Failed to initiate curl request job." })
 	else
-		vim.notify("Asynchronous request initiated.", vim.log.levels.INFO)
+		vim.notify("Asynchronous request initiated.", vim.log.levels.DEBUG)
 	end
 	-- M.execute returns now, the callback runs later
 end
