@@ -1,6 +1,23 @@
-### Get all users
-# Get all posts
-GET https://jsonplaceholder.typicode.com/posts
+### GET hello world
+GET http://localhost:8000/hello
+Accept: application/json
+
+### GET slog endpoint
+GET http://localhost:8000/slow
+Accept: application/json
+
+### POST echo endpoint
+POST http://localhost:8000/echo
+Accept: application/json
+
+### POST auth endpoint (valid credentials)
+POST http://localhost:8000/secure
+Authorization: Basic admin:secret
+Accept: application/json
+
+### POST auth endpoint (valid incredentials)
+POST http://localhost:8000/secure
+Authorization: Basic admin:wrong-password
 Accept: application/json
 
 ### Create a new post
@@ -22,4 +39,7 @@ Content-Type: application/json
 Custom-Header: sardina
 
 ["lol"]
+
+### Generate a password
+POST https://api.malev.xyz/api/password
 
