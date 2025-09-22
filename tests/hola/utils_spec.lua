@@ -345,5 +345,81 @@ Content-Type: application/json
 				assert.equal("Custom mycustomtoken", parsed.headers["authorization"])
 			end)
 		end)
+
+		describe("parse_request with api key", function()
+			it("should handle API key header", function()
+				local request_text = [[
+GET /api/users HTTP/1.1
+Authorization: ApiKey abc123-def456-ghi789
+Content-Type: application/json
+]]
+				local parsed = utils.parse_request(request_text)
+				assert.equal("ApiKey abc123-def456-ghi789", parsed.headers["authorization"])
+			end)
+
+			it("should handle API key with template variables", function()
+				local request_text = [[
+GET /api/users HTTP/1.1
+Authorization: ApiKey {{API_KEY}}
+Content-Type: application/json
+]]
+				local compiled_text = utils.compile_template(request_text, {
+					{ API_KEY = "secret-api-key-123" }
+				})
+				local parsed = utils.parse_request(compiled_text)
+				assert.equal("ApiKey secret-api-key-123", parsed.headers["authorization"])
+			end)
+
+			it("should handle case insensitive API key header", function()
+				local request_text = [[
+GET /api/users HTTP/1.1
+authorization: apikey my-secret-key
+Content-Type: application/json
+]]
+				local parsed = utils.parse_request(request_text)
+				assert.equal("ApiKey my-secret-key", parsed.headers["authorization"])
+			end)
+
+			it("should trim whitespace from API key", function()
+				local request_text = [[
+GET /api/users HTTP/1.1
+Authorization: ApiKey   key-with-spaces
+Content-Type: application/json
+]]
+				local parsed = utils.parse_request(request_text)
+				assert.equal("ApiKey key-with-spaces", parsed.headers["authorization"])
+			end)
+
+			it("should handle API key with special characters", function()
+				local request_text = [[
+GET /api/users HTTP/1.1
+Authorization: ApiKey abc123-def456_ghi789.jkl012
+Content-Type: application/json
+]]
+				local parsed = utils.parse_request(request_text)
+				assert.equal("ApiKey abc123-def456_ghi789.jkl012", parsed.headers["authorization"])
+			end)
+
+			it("should handle API key with hyphens and underscores", function()
+				local request_text = [[
+GET /api/users HTTP/1.1
+Authorization: ApiKey sk-live_abc123def456
+Content-Type: application/json
+]]
+				local parsed = utils.parse_request(request_text)
+				assert.equal("ApiKey sk-live_abc123def456", parsed.headers["authorization"])
+			end)
+
+			it("should warn on empty API key", function()
+				local request_text = [[
+GET /api/users HTTP/1.1
+Authorization: ApiKey
+Content-Type: application/json
+]]
+				local parsed = utils.parse_request(request_text)
+				-- Should trim empty space and leave just the prefix
+				assert.equal("ApiKey", parsed.headers["authorization"])
+			end)
+		end)
 	end)
 end)

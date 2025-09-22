@@ -9,6 +9,7 @@ PORT = 8000
 USERNAME = "admin"
 PASSWORD = "secret"
 BEARER_TOKEN = "abc123-def456-ghi789"
+API_KEY = "secret-api-key-123"
 
 class SimpleHandler(BaseHTTPRequestHandler):
     def _send_json(self, obj, status=200):
@@ -34,6 +35,13 @@ class SimpleHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b'{"error":"Bearer token required"}')
 
+    def _unauthorized_apikey(self):
+        """Helper: send 401 response for API key authentication"""
+        self.send_response(401)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(b'{"error":"Invalid API key"}')
+
     def do_GET(self):
         if self.path == "/hello":
             # simple GET endpoint
@@ -54,6 +62,28 @@ class SimpleHandler(BaseHTTPRequestHandler):
                 self._send_json({"bearer": "success", "token": "valid"})
             else:
                 self._unauthorized_bearer()
+        elif self.path == "/apikey":
+            # GET endpoint with API Key Auth (supports both Authorization header and X-API-Key)
+            auth_header = self.headers.get("Authorization")
+            api_key_header = self.headers.get("X-API-Key")
+
+            api_key = None
+
+            # Check Authorization header first
+            if auth_header and auth_header.startswith("ApiKey "):
+                api_key = auth_header.split(" ", 1)[1].strip()
+            # Fall back to X-API-Key header
+            elif api_key_header:
+                api_key = api_key_header.strip()
+
+            if not api_key:
+                self._unauthorized_apikey()
+                return
+
+            if api_key == API_KEY:
+                self._send_json({"apikey": "success", "key": "valid"})
+            else:
+                self._unauthorized_apikey()
         else:
             self.send_response(404)
             self.end_headers()

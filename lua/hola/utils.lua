@@ -411,7 +411,7 @@ local function _needs_basic_auth_encoding(auth_value)
 	return true
 end
 
---- Processes Authorization header for automatic Basic Auth encoding and Bearer token formatting.
+--- Processes Authorization header for automatic Basic Auth encoding, Bearer token formatting, and API key handling.
 -- @param headers (table) The headers table with lowercase keys
 -- @return (table) The headers table with potentially modified authorization header
 local function _process_auth_header(headers)
@@ -440,6 +440,17 @@ local function _process_auth_header(headers)
 			headers["authorization"] = "Bearer " .. vim.fn.trim(token_value)
 		else
 			vim.notify("Bearer token cannot be empty", vim.log.levels.WARN)
+		end
+	-- Check if it's an API Key auth header
+	elseif auth_header:sub(1, 7):lower() == "apikey " then
+		local key_value = auth_header:sub(8)
+
+		-- Validate that API key is not empty
+		if key_value and vim.fn.trim(key_value) ~= "" then
+			-- API keys don't need encoding, just ensure proper formatting
+			headers["authorization"] = "ApiKey " .. vim.fn.trim(key_value)
+		else
+			vim.notify("API key cannot be empty", vim.log.levels.WARN)
 		end
 	end
 

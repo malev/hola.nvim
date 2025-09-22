@@ -30,6 +30,21 @@ GET http://localhost:8000/bearer
 Authorization: Bearer abc123-wrong-token
 Accept: application/json
 
+### GET auth API key (valid key)
+GET http://localhost:8000/apikey
+Authorization: ApiKey secret-api-key-123
+Accept: application/json
+
+### GET auth API key (invalid key)
+GET http://localhost:8000/apikey
+Authorization: ApiKey wrong-api-key
+Accept: application/json
+
+### GET auth with X-API-Key header
+GET http://localhost:8000/apikey
+X-API-Key: secret-api-key-123
+Accept: application/json
+
 ### Create a new post
 POST https://jsonplaceholder.typicode.com/posts
 Content-Type: application/json

@@ -181,6 +181,30 @@ GET https://api.example.com/data
 Authorization: Bearer {{API_TOKEN}}
 ```
 
+### API Key Authentication
+
+API keys are passed directly without modification, perfect for services that require API key-based authentication.
+
+**API Key Example:**
+```http
+GET https://api.example.com/users
+Authorization: ApiKey sk-live_abc123def456ghi789
+```
+
+**Works with variables:**
+```http
+GET https://api.example.com/users
+Authorization: ApiKey {{API_KEY}}
+```
+
+**Alternative header formats:**
+```http
+GET https://api.example.com/users
+X-API-Key: {{API_KEY}}
+```
+
+Note: The `Authorization: ApiKey` format ensures consistent formatting, while custom headers like `X-API-Key` are passed through unchanged.
+
 ## Power Up Your Requests with `.env` and Environment Variables! ⚙️
 
 `hola.nvim` allows you to dynamically inject values into your `.http` files using placeholders that reference variables defined in `.env` files or environment variables. This is particularly useful for managing API keys, secrets, and other configuration that you don't want to hardcode directly in your request files.
