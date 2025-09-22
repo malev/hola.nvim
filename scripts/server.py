@@ -8,6 +8,7 @@ PORT = 8000
 
 USERNAME = "admin"
 PASSWORD = "secret"
+BEARER_TOKEN = "abc123-def456-ghi789"
 
 class SimpleHandler(BaseHTTPRequestHandler):
     def _send_json(self, obj, status=200):
@@ -25,6 +26,14 @@ class SimpleHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b'{"error":"Unauthorized"}')
 
+    def _unauthorized_bearer(self):
+        """Helper: send 401 response with Bearer Auth challenge"""
+        self.send_response(401)
+        self.send_header("WWW-Authenticate", 'Bearer realm="API Access"')
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(b'{"error":"Bearer token required"}')
+
     def do_GET(self):
         if self.path == "/hello":
             # simple GET endpoint
@@ -33,6 +42,18 @@ class SimpleHandler(BaseHTTPRequestHandler):
             # slow GET endpoint (wait 1 second)
             time.sleep(1)
             self._send_json({"status": "slow response"})
+        elif self.path == "/bearer":
+            # GET endpoint with Bearer Auth
+            auth_header = self.headers.get("Authorization")
+            if not auth_header or not auth_header.startswith("Bearer "):
+                self._unauthorized_bearer()
+                return
+
+            token = auth_header.split(" ", 1)[1].strip()
+            if token == BEARER_TOKEN:
+                self._send_json({"bearer": "success", "token": "valid"})
+            else:
+                self._unauthorized_bearer()
         else:
             self.send_response(404)
             self.end_headers()

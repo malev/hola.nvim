@@ -411,7 +411,7 @@ local function _needs_basic_auth_encoding(auth_value)
 	return true
 end
 
---- Processes Authorization header for automatic Basic Auth encoding.
+--- Processes Authorization header for automatic Basic Auth encoding and Bearer token formatting.
 -- @param headers (table) The headers table with lowercase keys
 -- @return (table) The headers table with potentially modified authorization header
 local function _process_auth_header(headers)
@@ -429,6 +429,17 @@ local function _process_auth_header(headers)
 			-- Encode the credentials
 			local encoded = M.encode_basic_auth(auth_value)
 			headers["authorization"] = "Basic " .. encoded
+		end
+	-- Check if it's a Bearer auth header
+	elseif auth_header:sub(1, 7):lower() == "bearer " then
+		local token_value = auth_header:sub(8)
+
+		-- Validate that token is not empty
+		if token_value and vim.fn.trim(token_value) ~= "" then
+			-- Bearer tokens don't need encoding, just ensure proper formatting
+			headers["authorization"] = "Bearer " .. vim.fn.trim(token_value)
+		else
+			vim.notify("Bearer token cannot be empty", vim.log.levels.WARN)
 		end
 	end
 

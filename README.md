@@ -145,7 +145,11 @@ require("hola").setup({
 
 ## Authentication Support 🔐
 
-`hola.nvim` supports automatic Basic Authentication encoding. Simply write your credentials in readable format and the plugin handles the base64 encoding automatically.
+`hola.nvim` supports multiple authentication methods with automatic processing and template variable support.
+
+### Basic Authentication
+
+Simply write your credentials in readable format and the plugin handles the base64 encoding automatically.
 
 **Basic Auth Example:**
 ```http
@@ -159,6 +163,22 @@ The plugin automatically detects `Authorization: Basic username:password` header
 ```http
 GET https://api.example.com/protected
 Authorization: Basic {{USERNAME}}:{{PASSWORD}}
+```
+
+### Bearer Token Authentication
+
+Bearer tokens are used directly without modification, perfect for API keys and JWT tokens.
+
+**Bearer Token Example:**
+```http
+GET https://api.example.com/data
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Works with variables:**
+```http
+GET https://api.example.com/data
+Authorization: Bearer {{API_TOKEN}}
 ```
 
 ## Power Up Your Requests with `.env` and Environment Variables! ⚙️

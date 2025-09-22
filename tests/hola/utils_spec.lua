@@ -280,5 +280,70 @@ Content-Type: application/json
 				assert.equal("Basic dXNlcjpwYXNzOndvcmQ=", parsed.headers["authorization"])
 			end)
 		end)
+
+		describe("parse_request with bearer token", function()
+			it("should handle bearer token header", function()
+				local request_text = [[
+GET /api/users HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+Content-Type: application/json
+]]
+				local parsed = utils.parse_request(request_text)
+				assert.equal("Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", parsed.headers["authorization"])
+			end)
+
+			it("should handle bearer token with template variables", function()
+				local request_text = [[
+GET /api/users HTTP/1.1
+Authorization: Bearer {{API_TOKEN}}
+Content-Type: application/json
+]]
+				local compiled_text = utils.compile_template(request_text, {
+					{ API_TOKEN = "abc123token" }
+				})
+				local parsed = utils.parse_request(compiled_text)
+				assert.equal("Bearer abc123token", parsed.headers["authorization"])
+			end)
+
+			it("should handle case insensitive bearer header", function()
+				local request_text = [[
+GET /api/users HTTP/1.1
+authorization: bearer mytoken123
+Content-Type: application/json
+]]
+				local parsed = utils.parse_request(request_text)
+				assert.equal("Bearer mytoken123", parsed.headers["authorization"])
+			end)
+
+			it("should trim whitespace from bearer token", function()
+				local request_text = [[
+GET /api/users HTTP/1.1
+Authorization: Bearer   token-with-spaces
+Content-Type: application/json
+]]
+				local parsed = utils.parse_request(request_text)
+				assert.equal("Bearer token-with-spaces", parsed.headers["authorization"])
+			end)
+
+			it("should handle bearer token with special characters", function()
+				local request_text = [[
+GET /api/users HTTP/1.1
+Authorization: Bearer abc123-def456_ghi789.jkl012
+Content-Type: application/json
+]]
+				local parsed = utils.parse_request(request_text)
+				assert.equal("Bearer abc123-def456_ghi789.jkl012", parsed.headers["authorization"])
+			end)
+
+			it("should not process non-auth headers", function()
+				local request_text = [[
+GET /api/users HTTP/1.1
+Authorization: Custom mycustomtoken
+Content-Type: application/json
+]]
+				local parsed = utils.parse_request(request_text)
+				assert.equal("Custom mycustomtoken", parsed.headers["authorization"])
+			end)
+		end)
 	end)
 end)

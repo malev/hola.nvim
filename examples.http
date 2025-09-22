@@ -10,7 +10,7 @@ Accept: application/json
 POST http://localhost:8000/echo
 Accept: application/json
 
-### POST auth endpoint (valid credentials)
+### POST basic auth endpoint (valid credentials)
 POST http://localhost:8000/secure
 Authorization: Basic admin:secret
 Accept: application/json
@@ -18,6 +18,16 @@ Accept: application/json
 ### POST auth endpoint (valid incredentials)
 POST http://localhost:8000/secure
 Authorization: Basic admin:wrong-password
+Accept: application/json
+
+### GET auth bearer token (valid token)
+GET http://localhost:8000/bearer
+Authorization: Bearer abc123-def456-ghi789
+Accept: application/json
+
+### GET auth bearer token (vivalid token)
+GET http://localhost:8000/bearer
+Authorization: Bearer abc123-wrong-token
 Accept: application/json
 
 ### Create a new post
