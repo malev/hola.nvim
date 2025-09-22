@@ -371,6 +371,70 @@ function M.compile_template(str, sources)
 	return result
 end
 
+--- Encodes a username:password string to base64 for Basic Authentication.
+-- @param credentials (string) The credentials in format "username:password"
+-- @return (string) Base64 encoded credentials
+function M.encode_basic_auth(credentials)
+	if not credentials or credentials == "" then
+		return ""
+	end
+
+	-- Use vim.base64.encode for encoding
+	return vim.base64.encode(credentials)
+end
+
+--- Detects if an Authorization header value needs Basic Auth encoding.
+-- @param auth_value (string) The authorization header value (after "Basic ")
+-- @return (boolean) True if the value looks like it needs encoding (contains colon, not already base64)
+local function _needs_basic_auth_encoding(auth_value)
+	if not auth_value or auth_value == "" then
+		return false
+	end
+
+	-- Check if it contains a colon (indicating username:password format)
+	if not auth_value:find(":") then
+		return false
+	end
+
+	-- Simple heuristic: if it looks like base64 (only contains base64 chars and proper padding),
+	-- assume it's already encoded. This is not foolproof but works for most cases.
+	-- Base64 chars: A-Z, a-z, 0-9, +, /, = (for padding)
+	if auth_value:match("^[A-Za-z0-9+/]*=*$") and not auth_value:find("%s") then
+		-- Could be base64, but let's be more specific: check if it decodes to something with a colon
+		local success, decoded = pcall(vim.base64.decode, auth_value)
+		if success and decoded and decoded:find(":") then
+			-- It's already properly encoded
+			return false
+		end
+	end
+
+	return true
+end
+
+--- Processes Authorization header for automatic Basic Auth encoding.
+-- @param headers (table) The headers table with lowercase keys
+-- @return (table) The headers table with potentially modified authorization header
+local function _process_auth_header(headers)
+	local auth_header = headers["authorization"]
+	if not auth_header then
+		return headers
+	end
+
+	-- Check if it's a Basic auth header
+	local basic_prefix = "Basic "
+	if auth_header:sub(1, #basic_prefix):lower() == basic_prefix:lower() then
+		local auth_value = auth_header:sub(#basic_prefix + 1)
+
+		if _needs_basic_auth_encoding(auth_value) then
+			-- Encode the credentials
+			local encoded = M.encode_basic_auth(auth_value)
+			headers["authorization"] = "Basic " .. encoded
+		end
+	end
+
+	return headers
+end
+
 --- Parses the request text block into its components.
 -- Expects the first line to be METHOD URL [HTTP/Version].
 -- Headers are key:value pairs.
@@ -474,7 +538,10 @@ function M.parse_request(content)
 	-- 4. Concatenate body lines
 	output.body = table.concat(body_lines, "\n")
 
-	-- 5. Return the parsed structure
+	-- 5. Process authorization header for automatic Basic Auth encoding
+	output.headers = _process_auth_header(output.headers)
+
+	-- 6. Return the parsed structure
 	return output
 end
 

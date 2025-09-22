@@ -183,4 +183,102 @@ describe("hola.utils", function()
 			assert.are.same("javascript", utils.detect_filetype(input).filetype)
 		end)
 	end)
+	describe("basic auth processing", function()
+		describe("encode_basic_auth", function()
+			it("should base64 encode username:password", function()
+				local result = utils.encode_basic_auth("user:password")
+				assert.equal("dXNlcjpwYXNzd29yZA==", result)
+			end)
+
+			it("should handle empty username", function()
+				local result = utils.encode_basic_auth(":password")
+				assert.equal("OnBhc3N3b3Jk", result)
+			end)
+
+			it("should handle empty password", function()
+				local result = utils.encode_basic_auth("user:")
+				assert.equal("dXNlcjo=", result)
+			end)
+
+			it("should handle special characters in credentials", function()
+				local result = utils.encode_basic_auth("user@domain.com:p@ssw0rd!")
+				assert.equal("dXNlckBkb21haW4uY29tOnBAc3N3MHJkIQ==", result)
+			end)
+		end)
+
+		describe("parse_request with basic auth", function()
+			it("should detect and encode basic auth header", function()
+				local request_text = [[
+GET /api/users HTTP/1.1
+Authorization: Basic user:password
+Content-Type: application/json
+]]
+				local parsed = utils.parse_request(request_text)
+				assert.equal("Basic dXNlcjpwYXNzd29yZA==", parsed.headers["authorization"])
+			end)
+
+			it("should leave already encoded basic auth unchanged", function()
+				local request_text = [[
+GET /api/users HTTP/1.1
+Authorization: Basic dXNlcjpwYXNzd29yZA==
+Content-Type: application/json
+]]
+				local parsed = utils.parse_request(request_text)
+				assert.equal("Basic dXNlcjpwYXNzd29yZA==", parsed.headers["authorization"])
+			end)
+
+			it("should work with template variables in basic auth", function()
+				local request_text = [[
+GET /api/users HTTP/1.1
+Authorization: Basic {{USERNAME}}:{{PASSWORD}}
+Content-Type: application/json
+]]
+				local compiled_text = utils.compile_template(request_text, {
+					{ USERNAME = "testuser", PASSWORD = "testpass" }
+				})
+				local parsed = utils.parse_request(compiled_text)
+				assert.equal("Basic dGVzdHVzZXI6dGVzdHBhc3M=", parsed.headers["authorization"])
+			end)
+
+			it("should handle case insensitive Authorization header", function()
+				local request_text = [[
+GET /api/users HTTP/1.1
+authorization: Basic user:password
+Content-Type: application/json
+]]
+				local parsed = utils.parse_request(request_text)
+				assert.equal("Basic dXNlcjpwYXNzd29yZA==", parsed.headers["authorization"])
+			end)
+
+			it("should not process non-basic auth headers", function()
+				local request_text = [[
+GET /api/users HTTP/1.1
+Authorization: Bearer token123
+Content-Type: application/json
+]]
+				local parsed = utils.parse_request(request_text)
+				assert.equal("Bearer token123", parsed.headers["authorization"])
+			end)
+
+			it("should handle malformed basic auth gracefully", function()
+				local request_text = [[
+GET /api/users HTTP/1.1
+Authorization: Basic userpassword
+Content-Type: application/json
+]]
+				local parsed = utils.parse_request(request_text)
+				assert.equal("Basic userpassword", parsed.headers["authorization"])
+			end)
+
+			it("should handle multiple colons in basic auth", function()
+				local request_text = [[
+GET /api/users HTTP/1.1
+Authorization: Basic user:pass:word
+Content-Type: application/json
+]]
+				local parsed = utils.parse_request(request_text)
+				assert.equal("Basic dXNlcjpwYXNzOndvcmQ=", parsed.headers["authorization"])
+			end)
+		end)
+	end)
 end)

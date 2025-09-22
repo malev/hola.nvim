@@ -143,6 +143,24 @@ require("hola").setup({
 }
 ```
 
+## Authentication Support 🔐
+
+`hola.nvim` supports automatic Basic Authentication encoding. Simply write your credentials in readable format and the plugin handles the base64 encoding automatically.
+
+**Basic Auth Example:**
+```http
+GET https://api.example.com/protected
+Authorization: Basic username:password
+```
+
+The plugin automatically detects `Authorization: Basic username:password` headers and encodes them to `Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=` before sending.
+
+**Works with variables:**
+```http
+GET https://api.example.com/protected
+Authorization: Basic {{USERNAME}}:{{PASSWORD}}
+```
+
 ## Power Up Your Requests with `.env` and Environment Variables! ⚙️
 
 `hola.nvim` allows you to dynamically inject values into your `.http` files using placeholders that reference variables defined in `.env` files or environment variables. This is particularly useful for managing API keys, secrets, and other configuration that you don't want to hardcode directly in your request files.

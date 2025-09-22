@@ -23,7 +23,6 @@ local M = {}
 ---
 --- @return nil: This function does not return a value. The callback is invoked with the response.
 function M.execute(options, on_complete)
-	vim.notify("Sending request " .. options.path, vim.log.levels.INFO)
 	if type(on_complete) ~= "function" then
 		vim.notify("Invalid callback", vim.log.levels.ERROR)
 		return
@@ -77,8 +76,6 @@ function M.execute(options, on_complete)
 		vim.notify("Failed to start HTTP request", vim.log.levels.ERROR)
 		-- Immediately call back with an error if job didn't even start
 		on_complete({ error = "Failed to initiate curl request job." })
-	else
-		vim.notify("Asynchronous request initiated.", vim.log.levels.DEBUG)
 	end
 	-- M.execute returns now, the callback runs later
 end
