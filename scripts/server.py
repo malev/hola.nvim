@@ -12,6 +12,13 @@ BEARER_TOKEN = "abc123-def456-ghi789"
 API_KEY = "secret-api-key-123"
 
 class SimpleHandler(BaseHTTPRequestHandler):
+    def _log_headers(self):
+        """Helper: log incoming request headers"""
+        print(f"Headers for {self.command} {self.path}:")
+        for header, value in self.headers.items():
+            print(f"  {header}: {value}")
+        print()
+
     def _send_json(self, obj, status=200):
         """Helper: send JSON response"""
         self.send_response(status)
@@ -43,6 +50,7 @@ class SimpleHandler(BaseHTTPRequestHandler):
         self.wfile.write(b'{"error":"Invalid API key"}')
 
     def do_GET(self):
+        self._log_headers()
         if self.path == "/hello":
             # simple GET endpoint
             self._send_json({"hello": "world"})
@@ -90,6 +98,7 @@ class SimpleHandler(BaseHTTPRequestHandler):
             self.wfile.write(b'{"error":"Not Found"}')
 
     def do_POST(self):
+        self._log_headers()
         if self.path == "/echo":
             # simple POST endpoint
             self._send_json({"message": "This is a POST response"})
