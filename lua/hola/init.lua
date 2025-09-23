@@ -62,11 +62,15 @@ function M.run_request_under_cursor()
 	end
 
 	local dotenv_vars = dotenv.load() -- Returns {} if none found
-	local compiled_text = utils.compile_template(request_text, { dotenv_vars, vim.env })
-	local request_options = utils.parse_request(compiled_text)
-	if not request_options then
-		vim.notify("Failed to parse request options.", vim.log.levels.ERROR)
-		return
+
+	-- Show "Loading secrets..." if we have provider variables
+	local variables = utils.extract_variables_from_text(request_text)
+	local has_provider_vars = false
+	for _, var in ipairs(variables) do
+		if var.type == "provider" then
+			has_provider_vars = true
+			break
+		end
 	end
 
 	-- Get the current cursor position for virtual text
@@ -78,7 +82,56 @@ function M.run_request_under_cursor()
 	local ns_id = vim.api.nvim_create_namespace("hola_request_status")
 	vim.api.nvim_buf_clear_namespace(0, ns_id, 0, -1) -- Clear any previous virtual text
 
-	-- Show "Sending..." virtual text
+	-- Show appropriate loading message
+	if has_provider_vars then
+		vim.api.nvim_buf_set_extmark(0, ns_id, line, col, {
+			virt_text = { { "🔐Loading secrets from providers...", "Comment" } },
+			virt_text_pos = "eol",
+			hl_mode = "combine",
+		})
+	else
+		vim.api.nvim_buf_set_extmark(0, ns_id, line, col, {
+			virt_text = { { "⏳Sending...", "Comment" } },
+			virt_text_pos = "eol",
+			hl_mode = "combine",
+		})
+	end
+
+	-- Compile template with provider support
+	local compiled_text, provider_errors = utils.compile_template_with_providers(request_text, { dotenv_vars, vim.env })
+
+	-- Handle provider errors
+	if #provider_errors > 0 then
+		local error_msg = "Provider errors: "
+		for i, err in ipairs(provider_errors) do
+			error_msg = error_msg .. err.variable .. " (" .. err.error .. ")"
+			if i < #provider_errors then
+				error_msg = error_msg .. ", "
+			end
+		end
+
+		vim.api.nvim_buf_clear_namespace(0, ns_id, 0, -1)
+		vim.api.nvim_buf_set_extmark(0, ns_id, line, col, {
+			virt_text = { { "❗" .. error_msg, "ErrorMsg" } },
+			virt_text_pos = "eol",
+			hl_mode = "combine",
+		})
+		return
+	end
+
+	local request_options = utils.parse_request(compiled_text)
+	if not request_options then
+		vim.api.nvim_buf_clear_namespace(0, ns_id, 0, -1)
+		vim.api.nvim_buf_set_extmark(0, ns_id, line, col, {
+			virt_text = { { "❗Failed to parse request", "ErrorMsg" } },
+			virt_text_pos = "eol",
+			hl_mode = "combine",
+		})
+		return
+	end
+
+	-- Update to "Sending..." after secrets are loaded
+	vim.api.nvim_buf_clear_namespace(0, ns_id, 0, -1)
 	vim.api.nvim_buf_set_extmark(0, ns_id, line, col, {
 		virt_text = { { "⏳Sending...", "Comment" } },
 		virt_text_pos = "eol",
@@ -114,10 +167,6 @@ function M.run_request_under_cursor()
 end
 
 M.run_selected_request = function()
-	-- Create a namespace for our virtual text
-	local ns_id = vim.api.nvim_create_namespace("hola_request_status")
-	vim.api.nvim_buf_clear_namespace(0, ns_id, 0, -1) -- Clear any previous virtual text
-
 	local request_text, err = utils.get_visual_selection()
 	if err then
 		vim.notify("Failed retrieving content." .. err, vim.log.levels.ERROR)
@@ -125,7 +174,23 @@ M.run_selected_request = function()
 	end
 
 	local dotenv_vars = dotenv.load() -- Returns {} if none found
-	local compiled_text = utils.compile_template(request_text, { dotenv_vars, vim.env })
+
+	-- Compile template with provider support
+	local compiled_text, provider_errors = utils.compile_template_with_providers(request_text, { dotenv_vars, vim.env })
+
+	-- Handle provider errors
+	if #provider_errors > 0 then
+		local error_msg = "Provider errors: "
+		for i, err in ipairs(provider_errors) do
+			error_msg = error_msg .. err.variable .. " (" .. err.error .. ")"
+			if i < #provider_errors then
+				error_msg = error_msg .. ", "
+			end
+		end
+		vim.notify(error_msg, vim.log.levels.ERROR)
+		return
+	end
+
 	local request_options = utils.parse_request(compiled_text)
 	if not request_options then
 		vim.notify("Failed to parse request options.", vim.log.levels.ERROR)

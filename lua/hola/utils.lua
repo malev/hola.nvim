@@ -719,4 +719,76 @@ function M.extract_variables_from_text(text)
 	return providers.extract_variables_from_text(text)
 end
 
+--- Resolve a provider secret
+--- @param provider_name string Name of the provider (e.g., "vault")
+--- @param path string Secret path (e.g., "secret/api")
+--- @param field string Secret field (e.g., "token")
+--- @return string|nil, string|nil secret_value, error_message
+function M.resolve_provider_secret(provider_name, path, field)
+	return providers.resolve_provider_secret(provider_name, path, field)
+end
+
+--- Check if a provider is available and enabled
+--- @param provider_name string Name of the provider
+--- @return boolean True if provider is available
+function M.is_provider_available(provider_name)
+	return providers.is_provider_available(provider_name)
+end
+
+--- Prepare provider secrets for template compilation
+--- @param text string The request text to analyze
+--- @return table, table provider_secrets, errors
+function M.prepare_provider_secrets(text)
+	local variables = M.extract_variables_from_text(text)
+	local provider_secrets = {}
+	local errors = {}
+
+	for _, var in ipairs(variables) do
+		if var.type == "provider" then
+			-- Check if provider is available
+			if not M.is_provider_available(var.provider) then
+				table.insert(errors, {
+					variable = var.original_text,
+					error = "Provider '" .. var.provider .. "' is not available or enabled"
+				})
+			else
+				-- Fetch secret
+				local value, error = M.resolve_provider_secret(var.provider, var.path, var.field)
+				if value then
+					-- Store with original variable name as key for compile_template
+					provider_secrets[var.original_text] = value
+				else
+					table.insert(errors, {
+						variable = var.original_text,
+						error = error or "Failed to fetch secret"
+					})
+				end
+			end
+		end
+	end
+
+	return provider_secrets, errors
+end
+
+--- Enhanced compile_template with provider support
+--- @param text string The request text
+--- @param traditional_sources table Array of traditional variable sources (.env, environment)
+--- @return string, table compiled_text, errors
+function M.compile_template_with_providers(text, traditional_sources)
+	-- First, fetch provider secrets
+	local provider_secrets, provider_errors = M.prepare_provider_secrets(text)
+
+	-- Combine provider secrets with traditional sources
+	-- Provider secrets take precedence (first in the list)
+	local all_sources = { provider_secrets }
+	for _, source in ipairs(traditional_sources or {}) do
+		table.insert(all_sources, source)
+	end
+
+	-- Use existing compile_template function
+	local compiled_text = M.compile_template(text, all_sources)
+
+	return compiled_text, provider_errors
+end
+
 return M
