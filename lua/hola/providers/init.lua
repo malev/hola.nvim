@@ -1,5 +1,13 @@
 local providers = {}
 
+-- Provider registry
+local provider_registry = {
+	vault = require("hola.providers.vault"),
+	-- Future providers can be added here:
+	-- ["aws-secrets"] = require("hola.providers.aws_secrets"),
+	-- ["azure-kv"] = require("hola.providers.azure_keyvault"),
+}
+
 --- Parse a variable reference to determine if it's a provider or traditional variable
 --- @param variable_text string The variable content (without the surrounding {{}} braces)
 --- @return table Parsed variable information
@@ -88,6 +96,40 @@ function providers.extract_variables_from_text(text)
 	end
 
 	return variables
+end
+
+--- Resolve a provider secret
+--- @param provider_name string Name of the provider (e.g., "vault")
+--- @param path string Secret path (e.g., "secret/api")
+--- @param field string Secret field (e.g., "token")
+--- @return string|nil, string|nil secret_value, error_message
+function providers.resolve_provider_secret(provider_name, path, field)
+	local provider = provider_registry[provider_name]
+	if not provider then
+		return nil, "Unknown provider: " .. provider_name
+	end
+
+	return provider.get_secret(path, field)
+end
+
+--- Check if a provider is available and enabled
+--- @param provider_name string Name of the provider
+--- @return boolean True if provider is available
+function providers.is_provider_available(provider_name)
+	-- Check if provider exists in registry
+	if not provider_registry[provider_name] then
+		return false
+	end
+
+	-- For vault, check if it's enabled in config
+	if provider_name == "vault" then
+		local config = require("hola.config")
+		local vault_config = config.get_vault()
+		return vault_config.enabled
+	end
+
+	-- Default to true for other providers
+	return true
 end
 
 return providers
