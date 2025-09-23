@@ -205,16 +205,21 @@ X-API-Key: {{API_KEY}}
 
 Note: The `Authorization: ApiKey` format ensures consistent formatting, while custom headers like `X-API-Key` are passed through unchanged.
 
-## Power Up Your Requests with `.env` and Environment Variables! ⚙️
+## Power Up Your Requests with Variables and Secrets! ⚙️
 
-`hola.nvim` allows you to dynamically inject values into your `.http` files using placeholders that reference variables defined in `.env` files or environment variables. This is particularly useful for managing API keys, secrets, and other configuration that you don't want to hardcode directly in your request files.
+`hola.nvim` supports multiple ways to inject dynamic values into your `.http` files:
+
+### Environment Variables and `.env` Files
+
+Use placeholders like `{{VARIABLE_NAME}}` to reference variables from `.env` files or environment variables.
 
 **How it Works:**
 
 When `hola.nvim` processes an `.http` file, it scans for placeholders in the format `{{VARIABLE_NAME}}`. For each placeholder found, it attempts to resolve the value by checking the following sources in order of precedence:
 
-1. **`.env` Files:** `hola.nvim` will search for a `.env` file in the **current working directory** (the directory where you opened Neovim). If found, it will load the variables defined within this file.
-2. **Environment Variables:** If a variable is not found in any loaded `.env` file, `hola.nvim` will then look for a matching environment variable set in your operating system.
+1. **HashiCorp Vault:** `{{vault:secret/path#field}}` - Secure secret management for enterprise environments
+2. **`.env` Files:** Variables from `.env` file in current working directory
+3. **Environment Variables:** System environment variables as fallback
 
 **Example:**
 
@@ -223,7 +228,7 @@ Consider the following `.http` file:
 ```http
 POST https://postman-echo.com/post
 Content-Type: application/json
-X-API-KEY: {{X_API_KEY}}
+X-API-KEY: {{vault:secret/api#key}}
 X-API-SECRET: {{X_API_SECRET}}
 
 {
@@ -232,25 +237,42 @@ X-API-SECRET: {{X_API_SECRET}}
 }
 ```
 
-To populate the placeholders in this file, you can:
+### HashiCorp Vault Integration 🔐
 
-**1. Create a `.env` file in the same directory where you opened Neovim:**
+For enterprise secret management, use `{{vault:path#field}}` syntax to fetch secrets from HashiCorp Vault:
 
+```http
+GET https://api.example.com/secure
+Authorization: Bearer {{vault:secret/tokens#api_key}}
 ```
-X_API_KEY=your_actual_api_key
+
+**Setup:**
+1. Install and configure the Vault CLI
+2. Enable vault in your configuration:
+   ```lua
+   require("hola").setup({
+     vault = { enabled = true }
+   })
+   ```
+3. Check vault status: `:HolaVaultStatus`
+
+> See [VAULT.md](VAULT.md) for detailed vault configuration and troubleshooting.
+
+### Standard Environment Variables
+
+Create a `.env` file or use environment variables for traditional secret management:
+
+**.env file:**
+```
 X_API_SECRET=your_super_secret
 API_KEY_FOR_JSON=another_key_from_env
 ```
 
-**2. Alternatively, you can set these variables as environment variables in your terminal before launching Neovim:**
-
+**Environment variables:**
 ```bash
-export X_API_KEY="another_api_key_from_env"
 export X_API_SECRET="even_more_secret"
 export API_KEY_FOR_JSON="yet_another_key"
 ```
-
-If no `.env` file is found or if a specific variable is not defined in the `.env` file, `hola.nvim` will fall back to checking your system's environment variables.
 
 ## Development: Join the "¡Hola!" Brigade! 🧑‍💻
 
