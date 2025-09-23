@@ -1,4 +1,5 @@
 local M = {}
+local providers = require("hola.providers")
 
 local SEPARATOR_PATTERN = "^###" -- Define pattern once
 local separator_regex = vim.regex(SEPARATOR_PATTERN)
@@ -702,6 +703,20 @@ function M.detect_filetype(response)
 	end
 
 	return response
+end
+
+--- Parse a variable reference to determine if it's a provider or traditional variable
+--- @param variable_text string The variable content (without the surrounding {{}} braces)
+--- @return table Parsed variable information
+function M.parse_variable_reference(variable_text)
+	return providers.parse_variable_reference(variable_text)
+end
+
+--- Extract all variables from text and parse them
+--- @param text string The text to search for variables
+--- @return table Array of parsed variable information
+function M.extract_variables_from_text(text)
+	return providers.extract_variables_from_text(text)
 end
 
 return M
