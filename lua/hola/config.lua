@@ -16,6 +16,10 @@ local DEFAULT_CONFIG = {
 		auto_focus_response = false, -- Focus response window after request
 		response_window_position = "right", -- Position of response window
 	},
+	-- Vault integration options
+	vault = {
+		enabled = false, -- Enable vault secret integration
+	},
 }
 
 --- Current user configuration
@@ -45,6 +49,12 @@ end
 -- @return (table) UI configuration options
 function M.get_ui()
 	return user_config.ui
+end
+
+--- Get vault-specific configuration
+-- @return (table) Vault configuration options
+function M.get_vault()
+	return user_config.vault
 end
 
 --- Update JSON configuration

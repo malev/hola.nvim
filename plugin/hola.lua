@@ -44,6 +44,27 @@ end, {
 	desc = "Validate current JSON response",
 })
 
+vim.api.nvim_create_user_command("HolaVaultStatus", function()
+	require("hola").show_vault_status()
+end, {
+	nargs = "*",
+	desc = "Show vault health status and configuration",
+})
+
+vim.api.nvim_create_user_command("HolaEnableVault", function()
+	require("hola").enable_vault()
+end, {
+	nargs = "*",
+	desc = "Enable vault integration for current session",
+})
+
+vim.api.nvim_create_user_command("HolaDisableVault", function()
+	require("hola").disable_vault()
+end, {
+	nargs = "*",
+	desc = "Disable vault integration for current session",
+})
+
 vim.api.nvim_create_user_command("HolaCloseWindow", function()
 	vim.print("Deprecated. Try :HolaToggle instead.", vim.log.levels.WARN)
 end, {

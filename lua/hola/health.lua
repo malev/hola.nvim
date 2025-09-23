@@ -1,6 +1,8 @@
 -- luacheck: ignore 212
 local error = vim.health.error
 local ok = vim.health.ok
+local warn = vim.health.warn
+local info = vim.health.info
 
 local M = {}
 
@@ -10,6 +12,56 @@ local M = {}
 local function lualib_installed(lib_name)
 	local res, _ = pcall(require, lib_name)
 	return res
+end
+
+--- Check vault health using the vault_health module
+local function check_vault_health()
+	local vault_health = require("hola.vault_health")
+	local config = require("hola.config")
+
+	vim.health.start("hola vault integration")
+
+	-- Check if vault is enabled in config
+	local vault_config = config.get_vault()
+	if not vault_config.enabled then
+		info("Vault integration disabled in configuration")
+		info("Enable with: require('hola').setup({vault = {enabled = true}})")
+		return
+	end
+
+	-- Run vault health checks
+	local checks = vault_health.check_vault()
+
+	for _, check in ipairs(checks) do
+		local result = check.result
+		local message = check.name .. ": " .. result.message
+
+		if result.level == "OK" then
+			ok(message)
+		elseif result.level == "WARN" then
+			warn(message)
+			if result.suggestion then
+				info("  → " .. result.suggestion)
+			end
+		else -- INFO
+			info(message)
+		end
+	end
+
+	-- Summary message
+	local has_warnings = false
+	for _, check in ipairs(checks) do
+		if check.result.level == "WARN" then
+			has_warnings = true
+			break
+		end
+	end
+
+	if not has_warnings then
+		ok("Vault integration ready")
+	else
+		warn("Vault features will be disabled due to warnings above")
+	end
 end
 
 M.check = function()
@@ -31,6 +83,9 @@ M.check = function()
 	end
 
 	ok("hola is installed")
+
+	-- Add vault health checks
+	check_vault_health()
 end
 
 return M
