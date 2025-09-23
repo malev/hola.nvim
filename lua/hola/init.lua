@@ -3,6 +3,7 @@ local utils = require("hola.utils")
 local ui = require("hola.ui")
 local dotenv = require("hola.dotenv")
 local config = require("hola.config")
+local vault_health = require("hola.vault_health")
 
 local M = {}
 
@@ -10,6 +11,18 @@ local M = {}
 -- @param opts (table|nil) User configuration options
 function M.setup(opts)
 	config.setup(opts)
+
+	-- If vault is enabled, perform a quick health check and show warnings if needed
+	local vault_config = config.get_vault()
+	if vault_config.enabled then
+		local valid, message, suggestion = vault_health.validate_vault_requirements()
+		if not valid then
+			vim.notify("hola.nvim vault: " .. message, vim.log.levels.WARN)
+			if suggestion then
+				vim.notify("Suggestion: " .. suggestion, vim.log.levels.INFO)
+			end
+		end
+	end
 end
 
 function M.display_metadata()
@@ -129,6 +142,35 @@ M.run_selected_request = function()
 	end
 
 	request.execute(request_options, on_request_finished)
+end
+
+--- Show vault health status
+function M.show_vault_status()
+	vault_health.show_vault_status()
+end
+
+--- Enable vault integration mid-session
+function M.enable_vault()
+	local current_config = config.get()
+	current_config.vault.enabled = true
+
+	-- Run health check and show results
+	local valid, message, suggestion = vault_health.validate_vault_requirements()
+	if valid then
+		vim.notify("✓ Vault integration enabled and ready!", vim.log.levels.INFO)
+	else
+		vim.notify("⚠ Vault integration enabled but: " .. message, vim.log.levels.WARN)
+		if suggestion then
+			vim.notify("Suggestion: " .. suggestion, vim.log.levels.INFO)
+		end
+	end
+end
+
+--- Disable vault integration mid-session
+function M.disable_vault()
+	local current_config = config.get()
+	current_config.vault.enabled = false
+	vim.notify("Vault integration disabled", vim.log.levels.INFO)
 end
 
 return M
