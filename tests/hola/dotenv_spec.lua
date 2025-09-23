@@ -1,5 +1,3 @@
-_TESTING = true
-
 describe("dotnenv", function()
 	local dotenv = require("hola.dotenv")
 	describe("parse_dotenv_file", function()

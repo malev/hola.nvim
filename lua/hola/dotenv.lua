@@ -95,9 +95,8 @@ function M.load()
 	return {}
 end
 
-if _TESTING then
-	M.find_dotenv_in_cwd = find_dotenv_in_cwd
-	M.parse_dotenv_file = parse_dotenv_file
-end
+-- Expose internal functions for testing
+M.find_dotenv_in_cwd = find_dotenv_in_cwd
+M.parse_dotenv_file = parse_dotenv_file
 
 return M

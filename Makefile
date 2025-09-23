@@ -1,5 +1,5 @@
 test: deps/plenary.nvim
-	nvim --headless -u scripts/minimal.lua -c "PlenaryBustedDirectory ./tests {minimal_init='./scripts/minimal.lua'}"
+	nvim --headless -u scripts/init.lua -c "PlenaryBustedDirectory ./tests {minimal_init='./scripts/init.lua'}"
 
 lint:
 	luacheck lua/hola plugin/ spec/
