@@ -205,6 +205,37 @@ X-API-Key: {{API_KEY}}
 
 Note: The `Authorization: ApiKey` format ensures consistent formatting, while custom headers like `X-API-Key` are passed through unchanged.
 
+### OAuth 2.0 Server-to-Server Authentication
+
+`hola.nvim` supports OAuth 2.0 client credentials flow for seamless server-to-server authentication with API gateways and enterprise services without requiring browser interaction.
+
+**OAuth Token Example:**
+```http
+GET https://api.example.com/protected
+Authorization: Bearer {{OAUTH_TOKEN}}
+```
+
+**Multi-environment Support:**
+```http
+### Development API
+GET https://dev-api.example.com/data
+Authorization: Bearer {{OAUTH_TOKEN_DEV}}
+
+### Production API
+GET https://api.example.com/data
+Authorization: Bearer {{OAUTH_TOKEN}}
+```
+
+**Supported Providers:**
+- AWS Cognito
+- Auth0
+- Apigee
+- Custom OAuth 2.0 providers
+
+OAuth tokens are automatically obtained, cached, and refreshed as needed. Configuration is handled through `.env` files with provider-specific settings.
+
+> See [OAUTH.md](OAUTH.md) for detailed OAuth configuration, supported flows, and provider examples.
+
 ## Power Up Your Requests with Variables and Secrets! ⚙️
 
 `hola.nvim` supports multiple ways to inject dynamic values into your `.http` files:
