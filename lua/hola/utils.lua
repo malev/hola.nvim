@@ -364,9 +364,15 @@ function M.compile_template(str, sources)
 			-- Convert to string in case value was boolean/number from .env
 			return tostring(found_value)
 		else
-			vim.notify("Template variable not found: " .. var_name, vim.log.levels.ERROR, { title = "Template Error" })
-			-- Return original placeholder to signal failure within gsub for the outer check
-			return "{{" .. var_name_raw .. "}}"
+			-- Check if this is an OAuth variable that might have failed to fetch
+			if var_name:match("^OAUTH_TOKEN") then
+				-- Don't show error here - OAuth errors are handled separately in compile_template_with_providers
+				return "{{" .. var_name_raw .. "}}"
+			else
+				vim.notify("Template variable not found: " .. var_name, vim.log.levels.ERROR, { title = "Template Error" })
+				-- Return original placeholder to signal failure within gsub for the outer check
+				return "{{" .. var_name_raw .. "}}"
+			end
 		end
 	end)
 	return result
@@ -770,17 +776,81 @@ function M.prepare_provider_secrets(text)
 	return provider_secrets, errors
 end
 
---- Enhanced compile_template with provider support
+--- Extract OAuth variables from text
+--- @param text string The text to search for OAuth variables
+--- @return table Array of OAuth variable information
+local function extract_oauth_variables(text)
+	local oauth_vars = {}
+
+	-- Match {{OAUTH_TOKEN}} or {{OAUTH_TOKEN_SUFFIX}} patterns
+	for match in text:gmatch("{{%s*(OAUTH_TOKEN[^}]*)%s*}}") do
+		local var_name = vim.fn.trim(match)
+
+		-- Determine environment suffix
+		local env_suffix = 'default'
+		if var_name ~= 'OAUTH_TOKEN' then
+			-- Extract suffix from OAUTH_TOKEN_SUFFIX format
+			local suffix = var_name:match('^OAUTH_TOKEN_(.+)$')
+			if suffix then
+				env_suffix = suffix:lower()
+			end
+		end
+
+		table.insert(oauth_vars, {
+			original_text = var_name,
+			env_suffix = env_suffix,
+			full_match = '{{' .. match .. '}}'
+		})
+	end
+
+	return oauth_vars
+end
+
+--- Prepare OAuth tokens for template compilation
+--- @param text string The request text to analyze
+--- @param env_sources table Array of environment variable sources
+--- @return table, table oauth_tokens, errors
+function M.prepare_oauth_tokens(text, env_sources)
+	local oauth_vars = extract_oauth_variables(text)
+	local oauth_tokens = {}
+	local errors = {}
+
+	-- Load OAuth module
+	local ok, oauth = pcall(require, 'hola.oauth')
+	if not ok then
+		-- OAuth module not available, return empty results
+		return oauth_tokens, errors
+	end
+
+	for _, var in ipairs(oauth_vars) do
+		local token, error = oauth.get_token(var.env_suffix, env_sources)
+		if token then
+			oauth_tokens[var.original_text] = token
+		else
+			table.insert(errors, {
+				variable = var.original_text,
+				error = error or "Failed to fetch OAuth token"
+			})
+		end
+	end
+
+	return oauth_tokens, errors
+end
+
+--- Enhanced compile_template with provider and OAuth support
 --- @param text string The request text
 --- @param traditional_sources table Array of traditional variable sources (.env, environment)
 --- @return string, table compiled_text, errors
 function M.compile_template_with_providers(text, traditional_sources)
-	-- First, fetch provider secrets
+	-- First, fetch OAuth tokens (pass traditional sources so OAuth can find config)
+	local oauth_tokens, oauth_errors = M.prepare_oauth_tokens(text, traditional_sources)
+
+	-- Then, fetch provider secrets
 	local provider_secrets, provider_errors = M.prepare_provider_secrets(text)
 
-	-- Combine provider secrets with traditional sources
-	-- Provider secrets take precedence (first in the list)
-	local all_sources = { provider_secrets }
+	-- Combine all sources with OAuth tokens taking highest precedence
+	-- Order of precedence: OAuth tokens -> Provider secrets -> Traditional sources
+	local all_sources = { oauth_tokens, provider_secrets }
 	for _, source in ipairs(traditional_sources or {}) do
 		table.insert(all_sources, source)
 	end
@@ -788,7 +858,16 @@ function M.compile_template_with_providers(text, traditional_sources)
 	-- Use existing compile_template function
 	local compiled_text = M.compile_template(text, all_sources)
 
-	return compiled_text, provider_errors
+	-- Combine all errors
+	local all_errors = {}
+	for _, error in ipairs(oauth_errors) do
+		table.insert(all_errors, error)
+	end
+	for _, error in ipairs(provider_errors) do
+		table.insert(all_errors, error)
+	end
+
+	return compiled_text, all_errors
 end
 
 return M
