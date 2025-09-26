@@ -68,3 +68,69 @@ Custom-Header: sardina
 ### Generate a password
 POST https://api.malev.xyz/api/password
 
+### =============================================================================
+### OAuth 2.0 Testing (use with scripts/server.py and .env.oauth-test)
+### =============================================================================
+
+### OAuth Test - Generic Provider (Default Environment)
+GET http://localhost:8000/oauth-test
+Authorization: Bearer {{OAUTH_TOKEN}}
+Accept: application/json
+
+### OAuth Test - AWS Cognito Style
+GET http://localhost:8000/oauth-test
+Authorization: Bearer {{OAUTH_TOKEN_COGNITO}}
+Accept: application/json
+
+### OAuth Test - Auth0 Style
+GET http://localhost:8000/oauth-test
+Authorization: Bearer {{OAUTH_TOKEN_AUTH0}}
+Accept: application/json
+
+### OAuth Test - Apigee Style
+GET http://localhost:8000/oauth-test
+Authorization: Bearer {{OAUTH_TOKEN_APIGEE}}
+Accept: application/json
+
+### OAuth Test - Multi-Environment (Staging)
+GET http://localhost:8000/oauth-test
+Authorization: Bearer {{OAUTH_TOKEN_STAGING}}
+Accept: application/json
+
+### OAuth Test - Multi-Environment (Dev)
+GET http://localhost:8000/oauth-test
+Authorization: Bearer {{OAUTH_TOKEN_DEV}}
+Accept: application/json
+
+### OAuth Mixed with Traditional Variables
+POST http://localhost:8000/echo
+Authorization: Bearer {{OAUTH_TOKEN}}
+X-API-Key: {{API_KEY}}
+X-User-Email: {{USER_EMAIL}}
+Content-Type: application/json
+
+{
+  "message": "Testing OAuth with traditional variables",
+  "api_key": "{{API_KEY}}",
+  "oauth_env": "default"
+}
+
+### OAuth Token in Request Body (GraphQL Example)
+POST http://localhost:8000/echo
+Content-Type: application/json
+
+{
+  "query": "{ user { name email } }",
+  "variables": {},
+  "extensions": {
+    "authorization": "{{OAUTH_TOKEN_COGNITO}}"
+  }
+}
+
+### OAuth Custom Headers
+GET http://localhost:8000/oauth-test
+Authorization: Bearer {{OAUTH_TOKEN_AUTH0}}
+X-OAuth-Provider: auth0
+X-Environment: production
+Accept: application/json
+
