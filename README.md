@@ -117,23 +117,6 @@ require("hola").setup({
 })
 ```
 
-**Example formatted output:**
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "name": "John Doe",
-      "posts": [1, 2, 3]
-    }
-  ],
-  "meta": {
-    "count": 1,
-    "status": "success"
-  }
-}
-```
-
 ## Authentication Support 🔐
 
 `hola.nvim` supports multiple authentication methods with automatic processing and template variable support.
