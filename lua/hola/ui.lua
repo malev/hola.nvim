@@ -27,12 +27,7 @@ local function _process_json_content(body_content, filetype)
 		return body_content, false
 	end
 
-	local formatted, err = json.format(body_content, {
-		indent_size = json_config.indent_size,
-		sort_keys = json_config.sort_keys,
-		compact_arrays = json_config.compact_arrays,
-		max_array_length = json_config.max_array_length,
-	})
+	local formatted, err = json.format(body_content)
 
 	if formatted then
 		return formatted, true
@@ -335,7 +330,7 @@ function M.toggle_json_format()
 	else
 		-- Switch to formatted JSON
 		local body_content = state.raw_json_body or state.last_response.body or ""
-		local formatted, err = json.format(body_content, config.get_json())
+		local formatted, err = json.format(body_content)
 		if formatted then
 			new_content = formatted
 			new_formatted_state = true

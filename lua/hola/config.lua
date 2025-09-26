@@ -5,10 +5,6 @@ local DEFAULT_CONFIG = {
 	-- JSON formatting options
 	json = {
 		auto_format = true, -- Automatically format JSON responses
-		indent_size = 2, -- Number of spaces for indentation
-		sort_keys = true, -- Sort object keys alphabetically
-		compact_arrays = true, -- Keep simple arrays on one line
-		max_array_length = 5, -- Max items before expanding array
 		enable_folding = true, -- Enable JSON folding in buffer
 	},
 	-- UI options

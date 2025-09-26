@@ -12,11 +12,10 @@ Just add this to your `plugins` table in your Neovim configuration (using your p
   dependencies = { "nvim-lua/plenary.nvim" },
   config = function()
     require("hola").setup({
-      -- Optional: customize JSON formatting
+      -- Optional configuration
       json = {
         auto_format = true,     -- Auto-format JSON responses
-        indent_size = 2,        -- Spaces for indentation
-        sort_keys = true,       -- Sort object keys alphabetically
+        enable_folding = true,  -- Enable JSON folding in buffer
       },
     })
   end,
@@ -107,16 +106,12 @@ JSON responses are automatically formatted with:
 
 ### ⚙️ **Configuration**
 
-Customize JSON formatting behavior in your Neovim config:
+Customize JSON behavior in your Neovim config:
 
 ```lua
 require("hola").setup({
   json = {
     auto_format = true,        -- Auto-format JSON responses
-    indent_size = 2,           -- Spaces for indentation
-    sort_keys = true,          -- Sort object keys alphabetically
-    compact_arrays = true,     -- Keep simple arrays on one line
-    max_array_length = 5,      -- Max items before expanding array
     enable_folding = true,     -- Enable JSON folding in buffer
   },
 })
