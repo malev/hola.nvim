@@ -4,6 +4,7 @@ local ui = require("hola.ui")
 local dotenv = require("hola.dotenv")
 local config = require("hola.config")
 local vault_health = require("hola.vault_health")
+local virtual_text = require("hola.virtual_text")
 
 local M = {}
 
@@ -68,28 +69,11 @@ function M.run_request_under_cursor()
 		end
 	end
 
-	-- Get the current cursor position for virtual text
-	local cursor_pos = vim.api.nvim_win_get_cursor(0)
-	local line = cursor_pos[1] - 1 -- Convert to 0-based index
-	local col = cursor_pos[2]
-
-	-- Create a namespace for our virtual text
-	local ns_id = vim.api.nvim_create_namespace("hola_request_status")
-	vim.api.nvim_buf_clear_namespace(0, ns_id, 0, -1) -- Clear any previous virtual text
-
 	-- Show appropriate loading message
 	if has_provider_vars then
-		vim.api.nvim_buf_set_extmark(0, ns_id, line, col, {
-			virt_text = { { "🔐Loading secrets from providers...", "Comment" } },
-			virt_text_pos = "eol",
-			hl_mode = "combine",
-		})
+		virtual_text.show_provider_loading()
 	else
-		vim.api.nvim_buf_set_extmark(0, ns_id, line, col, {
-			virt_text = { { "⏳Sending...", "Comment" } },
-			virt_text_pos = "eol",
-			hl_mode = "combine",
-		})
+		virtual_text.show_request_sending()
 	end
 
 	-- Compile template with provider support
@@ -97,63 +81,25 @@ function M.run_request_under_cursor()
 
 	-- Handle provider errors
 	if #provider_errors > 0 then
-		local error_msg = "Provider errors: "
-		for i, err in ipairs(provider_errors) do
-			error_msg = error_msg .. err.variable .. " (" .. err.error .. ")"
-			if i < #provider_errors then
-				error_msg = error_msg .. ", "
-			end
-		end
-
-		vim.api.nvim_buf_clear_namespace(0, ns_id, 0, -1)
-		vim.api.nvim_buf_set_extmark(0, ns_id, line, col, {
-			virt_text = { { "❗" .. error_msg, "ErrorMsg" } },
-			virt_text_pos = "eol",
-			hl_mode = "combine",
-		})
+		virtual_text.show_provider_error_list(provider_errors)
 		return
 	end
 
 	local request_options = utils.parse_request(compiled_text)
 	if not request_options then
-		vim.api.nvim_buf_clear_namespace(0, ns_id, 0, -1)
-		vim.api.nvim_buf_set_extmark(0, ns_id, line, col, {
-			virt_text = { { "❗Failed to parse request", "ErrorMsg" } },
-			virt_text_pos = "eol",
-			hl_mode = "combine",
-		})
+		virtual_text.show_parse_error()
 		return
 	end
 
 	-- Update to "Sending..." after secrets are loaded
-	vim.api.nvim_buf_clear_namespace(0, ns_id, 0, -1)
-	vim.api.nvim_buf_set_extmark(0, ns_id, line, col, {
-		virt_text = { { "⏳Sending...", "Comment" } },
-		virt_text_pos = "eol",
-		hl_mode = "combine",
-	})
+	virtual_text.show_request_sending()
 
 	local function on_request_finished(result)
-		-- Remove the "Sending..." virtual text
-		vim.api.nvim_buf_clear_namespace(0, ns_id, 0, -1)
-
 		-- Check if the request resulted in an error or success
 		if result.error then
-			-- Show error status
-			vim.api.nvim_buf_set_extmark(0, ns_id, line, col, {
-				virt_text = { { "❗Error: " .. result.error, "ErrorMsg" } },
-				virt_text_pos = "eol",
-				hl_mode = "combine",
-			})
+			virtual_text.show_error("request", result.error)
 		else
-			-- Show success status with status code and elapsed time
-			local elapsed_text = result.elapsed_ms and string.format("%.0fms", result.elapsed_ms) or "?ms"
-			local status_text = "✔️Response: " .. (result.status or "Unknown") .. " (" .. elapsed_text .. ")"
-			vim.api.nvim_buf_set_extmark(0, ns_id, line, col, {
-				virt_text = { { status_text, "Comment" } },
-				virt_text_pos = "eol",
-				hl_mode = "combine",
-			})
+			virtual_text.show_request_success(result.status, result.elapsed_ms)
 			ui.display_response(result)
 		end
 	end
