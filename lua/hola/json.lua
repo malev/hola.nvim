@@ -47,11 +47,7 @@ local function format_value(value, level, config)
 		return tostring(value)
 	elseif value_type == "string" then
 		-- Escape special characters
-		local escaped = value:gsub("\\", "\\\\")
-			:gsub('"', '\\"')
-			:gsub("\n", "\\n")
-			:gsub("\r", "\\r")
-			:gsub("\t", "\\t")
+		local escaped = value:gsub("\\", "\\\\"):gsub('"', '\\"'):gsub("\n", "\\n"):gsub("\r", "\\r"):gsub("\t", "\\t")
 		return '"' .. escaped .. '"'
 	elseif value_type == "table" then
 		-- Handle vim.empty_dict() explicitly as object
@@ -154,22 +150,6 @@ function M.format(json_string, options)
 	return formatted, nil
 end
 
---- Validates JSON syntax without formatting
--- @param json_string (string) JSON string to validate
--- @return (boolean, string|nil) True if valid, error message if invalid
-function M.validate(json_string)
-	if not json_string or json_string == "" then
-		return false, "Empty JSON string"
-	end
-
-	local ok, error_msg = pcall(vim.fn.json_decode, json_string)
-	if not ok then
-		return false, "Invalid JSON: " .. tostring(error_msg)
-	end
-
-	return true, nil
-end
-
 --- Minifies JSON by removing unnecessary whitespace
 -- @param json_string (string) JSON string to minify
 -- @return (string|nil, string|nil) Minified JSON or nil, error message if failed
@@ -207,3 +187,4 @@ function M.get_default_config()
 end
 
 return M
+

@@ -355,28 +355,6 @@ function M.toggle_json_format()
 	state.is_json_formatted = new_formatted_state
 end
 
---- Validates current JSON response
-function M.validate_json()
-	if not state.last_response then
-		vim.notify("No response to validate", vim.log.levels.WARNING)
-		return
-	end
-
-	if state.last_response.filetype ~= "json" then
-		vim.notify("Current response is not JSON", vim.log.levels.WARNING)
-		return
-	end
-
-	local body_content = state.raw_json_body or state.last_response.body or ""
-	local is_valid, error_msg = json.validate(body_content)
-
-	if is_valid then
-		vim.notify("JSON is valid", vim.log.levels.INFO)
-	else
-		vim.notify("JSON validation failed: " .. (error_msg or "unknown error"), vim.log.levels.ERROR)
-	end
-end
-
 local function has_resp(state)
 	return state["response"] ~= nil
 end

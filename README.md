@@ -30,7 +30,6 @@ Just add this to your `plugins` table in your Neovim configuration (using your p
   * `:HolaToggle`: Toggle between response body and metadata view
   * `:HolaClose`: Close response window
   * `:HolaFormatJson`: Toggle JSON formatting (formatted ↔ raw) ✨
-  * `:HolaValidateJson`: Validate current JSON response syntax 🔍
 
 ## Example: Let's Send Some Requests! 📬
 
@@ -60,7 +59,6 @@ DELETE https://jsonplaceholder.typicode.com/posts/1
 * `:HolaToggle`: Switch between response body and metadata/headers view
 * `:HolaClose`: Close the response window when you're done
 * `:HolaFormatJson`: Toggle between beautifully formatted and raw JSON (JSON responses only)
-* `:HolaValidateJson`: Check if your JSON response is syntactically valid
 
 ## Recommended Keymaps: Supercharge Your Workflow! ⚡
 
@@ -77,7 +75,6 @@ map({ "n", "v" }, "<leader>ht", "<cmd>:HolaToggle<cr>", { desc = "Toggle respons
 map({ "n", "v" }, "<leader>hc", "<cmd>:HolaClose<cr>", { desc = "Close response window" })
 -- Hola keymaps - JSON tools ✨
 map({ "n", "v" }, "<leader>hf", "<cmd>:HolaFormatJson<cr>", { desc = "Toggle JSON formatting" })
-map({ "n", "v" }, "<leader>hv", "<cmd>:HolaValidateJson<cr>", { desc = "Validate JSON" })
 ```
 
 ## Beautiful JSON Responses with Smart Formatting! ✨
@@ -105,7 +102,6 @@ JSON responses are automatically formatted with:
 ### 🎛️ **Interactive JSON Tools**
 
 - **`:HolaFormatJson`** - Toggle between formatted and raw JSON views
-- **`:HolaValidateJson`** - Instant JSON syntax validation
 - **Enhanced syntax highlighting** with proper JSON filetype detection
 - **JSON folding support** for navigating large responses
 

@@ -42,11 +42,6 @@ function M.toggle_json_format()
 	ui.toggle_json_format()
 end
 
---- Validate current JSON response
-function M.validate_json()
-	ui.validate_json()
-end
-
 function M.run_request_under_cursor()
 	-- 1. Get request text
 	local request_text = utils.get_request_under_cursor()

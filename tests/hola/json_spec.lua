@@ -13,7 +13,8 @@ describe("JSON module", function()
 
 		it("should format nested objects", function()
 			local input = '{"user":{"name":"John","address":{"city":"NYC","zip":"10001"}}}'
-			local expected = '{\n  "user": {\n    "address": {\n      "city": "NYC",\n      "zip": "10001"\n    },\n    "name": "John"\n  }\n}'
+			local expected =
+				'{\n  "user": {\n    "address": {\n      "city": "NYC",\n      "zip": "10001"\n    },\n    "name": "John"\n  }\n}'
 
 			local result, err = json.format(input)
 			assert.is_nil(err)
@@ -125,37 +126,6 @@ describe("JSON module", function()
 		end)
 	end)
 
-	describe("validate", function()
-		it("should validate correct JSON", function()
-			local input = '{"name":"John","age":30}'
-
-			local is_valid, err = json.validate(input)
-			assert.is_true(is_valid)
-			assert.is_nil(err)
-		end)
-
-		it("should reject invalid JSON", function()
-			local input = '{"invalid": json}'
-
-			local is_valid, err = json.validate(input)
-			assert.is_false(is_valid)
-			assert.is_not_nil(err)
-			assert.matches("Invalid JSON", err)
-		end)
-
-		it("should reject empty input", function()
-			local is_valid, err = json.validate("")
-			assert.is_false(is_valid)
-			assert.matches("Empty JSON string", err)
-		end)
-
-		it("should reject nil input", function()
-			local is_valid, err = json.validate(nil)
-			assert.is_false(is_valid)
-			assert.matches("Empty JSON string", err)
-		end)
-	end)
-
 	describe("minify", function()
 		it("should minify formatted JSON", function()
 			local input = '{\n  "name": "John",\n  "age": 30\n}'
@@ -250,3 +220,4 @@ describe("JSON module", function()
 		end)
 	end)
 end)
+
