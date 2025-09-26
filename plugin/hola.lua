@@ -9,12 +9,6 @@ end, {
 	desc = "Send request",
 })
 
-vim.api.nvim_create_user_command("HolaSendSelected", function()
-	require("hola").run_selected_request()
-end, {
-	nargs = "*",
-	desc = "Send selected request",
-})
 
 vim.api.nvim_create_user_command("HolaToggle", function()
 	require("hola").toggle()

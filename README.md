@@ -25,7 +25,6 @@ Just add this to your `plugins` table in your Neovim configuration (using your p
 *Commands:*
 
   * `:HolaSend`: Unleash the request! 🚀
-  * `:HolaSendSelected`: Send visually selected request block
   * `:HolaToggle`: Toggle between response body and metadata view
   * `:HolaClose`: Close response window
   * `:HolaFormatJson`: Toggle JSON formatting (formatted ↔ raw) ✨
@@ -68,7 +67,6 @@ local map = vim.keymap.set
 
 -- Hola keymaps - Send it! 🚀
 map("n", "<leader>hs", "<cmd>:HolaSend<cr>", { desc = "Send request" })
-map("v", "<leader>hs", "<cmd>:HolaSendSelected<cr>", { desc = "Send selected request" })
 -- Hola keymaps - Response navigation 👀
 map({ "n", "v" }, "<leader>ht", "<cmd>:HolaToggle<cr>", { desc = "Toggle response body/metadata" })
 map({ "n", "v" }, "<leader>hc", "<cmd>:HolaClose<cr>", { desc = "Close response window" })

@@ -161,48 +161,6 @@ function M.run_request_under_cursor()
 	request.execute(request_options, on_request_finished)
 end
 
-M.run_selected_request = function()
-	local request_text, err = utils.get_visual_selection()
-	if err then
-		vim.notify("Failed retrieving content." .. err, vim.log.levels.ERROR)
-		return
-	end
-
-	local dotenv_vars = dotenv.load() -- Returns {} if none found
-
-	-- Compile template with provider support
-	local compiled_text, provider_errors = utils.compile_template_with_providers(request_text, { dotenv_vars, vim.env })
-
-	-- Handle provider errors
-	if #provider_errors > 0 then
-		local error_msg = "Provider errors: "
-		for i, err in ipairs(provider_errors) do
-			error_msg = error_msg .. err.variable .. " (" .. err.error .. ")"
-			if i < #provider_errors then
-				error_msg = error_msg .. ", "
-			end
-		end
-		vim.notify(error_msg, vim.log.levels.ERROR)
-		return
-	end
-
-	local request_options = utils.parse_request(compiled_text)
-	if not request_options then
-		vim.notify("Failed to parse request options.", vim.log.levels.ERROR)
-		return
-	end
-
-	local function on_request_finished(result)
-		-- Check if the request resulted in an error or success
-		if result.error then
-			vim.notify("Request failed", vim.log.levels.INFO)
-		else
-			ui.display_response(result)
-		end
-	end
-
-	request.execute(request_options, on_request_finished)
-end
 
 --- Show vault health status
 function M.show_vault_status()
