@@ -283,7 +283,7 @@ Want to contribute to `hola.nvim`? Awesome! Here's how to get started:
 
 *Note: If you are using nix and home-manager, try to use the native, unwrapped `nvim` binary for development.*
 
-1.  Clone this repo: `git clone <your_repo_url>`
+1.  Clone this repo: `git clone https://github.com/malev/hola.nvim`
 2.  Open Neovim in the project root: `nvim -u scripts/init.lua examples.http`
 3.  Run the tests: `make test` (Let's make sure everything is saying "¡Hola!" correctly!)
 4.  Run `python scripts/server.py` to have a server for testing
