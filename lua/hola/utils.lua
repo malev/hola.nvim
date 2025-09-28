@@ -805,7 +805,7 @@ function M.compile_template_with_providers(text, traditional_sources)
 	-- First, fetch OAuth tokens (pass traditional sources so OAuth can find config)
 	local oauth_tokens, oauth_errors = M.prepare_oauth_tokens(text, traditional_sources)
 
-	-- Then, fetch provider secrets
+	-- Then, fetch provider secrets (for backward compatibility with tests)
 	local provider_secrets, provider_errors = M.prepare_provider_secrets(text)
 
 	-- Combine all sources with OAuth tokens taking highest precedence

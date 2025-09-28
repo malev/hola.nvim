@@ -1,0 +1,10 @@
+# Example .provider file
+# This file demonstrates how to use external providers for secret management
+
+# Vault secrets (requires vault CLI and authentication)
+API_TOKEN=vault:secret/api#token
+DATABASE_PASSWORD=vault:secret/db#password
+
+# Static values can also be stored here
+API_URL=https://api.example.com
+TIMEOUT=30

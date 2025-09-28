@@ -2,6 +2,7 @@ local request = require("hola.request")
 local utils = require("hola.utils")
 local ui = require("hola.ui")
 local dotenv = require("hola.dotenv")
+local provider_file = require("hola.provider_file")
 local config = require("hola.config")
 local vault_health = require("hola.vault_health")
 local virtual_text = require("hola.virtual_text")
@@ -59,6 +60,9 @@ function M.run_request_under_cursor()
 
 	local dotenv_vars = dotenv.load() -- Returns {} if none found
 
+	-- Load provider variables from .provider file
+	local provider_vars, provider_file_errors = provider_file.load()
+
 	-- Show "Loading secrets..." if we have provider variables
 	local variables = utils.extract_variables_from_text(request_text)
 	local has_provider_vars = false
@@ -69,6 +73,15 @@ function M.run_request_under_cursor()
 		end
 	end
 
+	-- Also check if .provider file has content
+	local provider_count = 0
+	for _ in pairs(provider_vars) do
+		provider_count = provider_count + 1
+	end
+	if provider_count > 0 then
+		has_provider_vars = true
+	end
+
 	-- Show appropriate loading message
 	if has_provider_vars then
 		virtual_text.show_provider_loading()
@@ -76,8 +89,16 @@ function M.run_request_under_cursor()
 		virtual_text.show_request_sending()
 	end
 
-	-- Compile template with provider support
-	local compiled_text, provider_errors = utils.compile_template_with_providers(request_text, { dotenv_vars, vim.env })
+	-- Handle provider file errors
+	if #provider_file_errors > 0 then
+		virtual_text.show_provider_error_list(provider_file_errors)
+		return
+	end
+
+	-- Compile template with new precedence: OAuth -> Provider file -> .env -> OS env
+	-- Provider file secrets are passed as first traditional source,
+	-- but providers found in the text will also be resolved via compile_template_with_providers for backward compatibility
+	local compiled_text, provider_errors = utils.compile_template_with_providers(request_text, { provider_vars, dotenv_vars, vim.env })
 
 	-- Handle provider errors
 	if #provider_errors > 0 then
