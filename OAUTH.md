@@ -248,28 +248,6 @@ hola.nvim handles OAuth tokens automatically:
 5. **Token Injection**: Replaces template with actual token
 6. **Request Execution**: Executes the HTTP request with the token
 
-### Token Caching
-
-Tokens are cached securely on disk:
-
-**Cache Location**: `~/.local/share/nvim/hola/oauth_cache.json`
-
-**Cache Structure**:
-```json
-{
-  "default": {
-    "access_token": "eyJhbGciOiJSUzI1NiIs...",
-    "token_type": "Bearer",
-    "expires_at": 1234567890,
-    "acquired_at": 1234564290
-  },
-  "staging": {
-    "access_token": "eyJhbGciOiJIUzI1NiIs...",
-    "expires_at": 1234567890
-  }
-}
-```
-
 ### Smart Token Refresh
 
 - **Automatic Refresh**: Tokens are refreshed 5 minutes before expiration
