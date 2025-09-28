@@ -72,3 +72,16 @@ end, {
 	nargs = "*",
 	desc = "Maximize window",
 })
+
+-- Debug commands for the new resolution system
+vim.api.nvim_create_user_command("HolaDebug", function(opts)
+	require("hola.resolution.debug").debug_command(opts)
+end, {
+	desc = "Debug variable resolution for the current HTTP request",
+})
+
+vim.api.nvim_create_user_command("HolaProviders", function(opts)
+	require("hola.resolution.debug").provider_status_command(opts)
+end, {
+	desc = "Show status of all registered providers",
+})
