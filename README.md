@@ -1,6 +1,6 @@
 # Hola.nvim: Your In-Neovim REST Command Center
 
-> Send HTTP requests without leaving the comfort of your editor, with built-in environment and dotenv support!
+> Send HTTP requests without leaving the comfort of your editor, with built-in secrets management!
 
 ## Installation: Get Ready to Say "¡Hola!" 👋
 
@@ -117,11 +117,27 @@ require("hola").setup({
 
 ## Configuration Management 🔧
 
-`hola.nvim` provides flexible configuration management through environment variables and **providers** - powerful systems that fetch secrets and configuration from external sources.
+`hola.nvim` provides flexible configuration management through **providers** - pluggable systems that resolve template variables using the pattern `{{provider:identifier}}` by fetching values from various sources.
 
-### Environment Variables & .env Files
+### Unified Provider Architecture
 
-Use traditional `.env` files for local development and non-sensitive configuration:
+All configuration values are accessed through providers, ensuring consistent behavior and security practices:
+
+- **`{{env:VARIABLE}}`** - Environment variables and `.env` files
+- **`{{vault:secret/path#field}}`** - HashiCorp Vault secrets ([VAULT.md](VAULT.md))
+- **`{{oauth:service}}`** - OAuth 2.0 access tokens ([OAUTH.md](OAUTH.md))
+- **`{{refs:VARIABLE}}`** - Reference aliases to other providers
+
+```http
+GET {{env:API_URL}}/users?debug={{env:DEBUG}}
+Authorization: Bearer {{oauth:my_service}}
+X-API-Key: {{vault:secret/api#key}}
+X-Shortcut: {{refs:COMMON_TOKEN}}
+```
+
+### Environment Provider
+
+The `env` provider handles both system environment variables and `.env` files:
 
 ```bash
 # .env
@@ -131,23 +147,14 @@ TIMEOUT=30
 ```
 
 ```http
-GET {{API_URL}}/users?debug={{DEBUG}}
+GET {{env:API_URL}}/users?debug={{env:DEBUG}}&timeout={{env:TIMEOUT}}
 ```
 
-### Providers: Secure External Configuration
+### Provider Benefits
 
-**Providers** use the pattern `{{provider:identifier}}` to fetch values from external systems:
+**Security**: External providers offer secure secret storage options beyond environment variables and version control.
 
-- **`{{vault:secret/path#field}}`** - HashiCorp Vault secrets ([VAULT.md](VAULT.md))
-- **`{{oauth:service}}`** - OAuth 2.0 access tokens ([OAUTH.md](OAUTH.md))
-- **`{{refs:VARIABLE}}`** - Reference aliases to other providers
-
-```http
-GET https://api.example.com/users
-Authorization: Bearer {{oauth:my_service}}
-X-API-Key: {{vault:secret/api#key}}
-X-Shortcut: {{refs:COMMON_TOKEN}}
-```
+**Simplicity**: Complex authentication flows (OAuth, Vault) are handled automatically with caching and refresh logic.
 
 **Configuration Files:**
 - `oauth.toml` - OAuth service configurations
@@ -172,10 +179,10 @@ Authorization: Basic username:password
 
 The plugin automatically detects `Authorization: Basic username:password` headers and encodes them to `Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=` before sending.
 
-**Works with variables:**
+**Works with providers:**
 ```http
 GET https://api.example.com/protected
-Authorization: Basic {{USERNAME}}:{{PASSWORD}}
+Authorization: Basic {{env:USERNAME}}:{{env:PASSWORD}}
 ```
 
 ### Bearer Token Authentication
@@ -188,10 +195,10 @@ GET https://api.example.com/data
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-**Works with variables:**
+**Works with providers:**
 ```http
 GET https://api.example.com/data
-Authorization: Bearer {{API_TOKEN}}
+Authorization: Bearer {{env:API_TOKEN}}
 ```
 
 ### API Key Authentication
@@ -204,16 +211,16 @@ GET https://api.example.com/users
 Authorization: ApiKey sk-live_abc123def456ghi789
 ```
 
-**Works with variables:**
+**Works with providers:**
 ```http
 GET https://api.example.com/users
-Authorization: ApiKey {{API_KEY}}
+Authorization: ApiKey {{env:API_KEY}}
 ```
 
 **Alternative header formats:**
 ```http
 GET https://api.example.com/users
-X-API-Key: {{API_KEY}}
+X-API-Key: {{env:API_KEY}}
 ```
 
 Note: The `Authorization: ApiKey` format ensures consistent formatting, while custom headers like `X-API-Key` are passed through unchanged.
