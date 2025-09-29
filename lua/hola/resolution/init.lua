@@ -7,6 +7,12 @@ local M = {}
 -- Provider registry - stores all available providers
 local provider_registry = {}
 
+-- Failed provider registry - stores providers that failed to register
+local failed_providers = {}
+
+-- Initialization state
+local initialized = false
+
 -- Module dependencies
 local config = require('hola.resolution.config')
 local queue = require('hola.resolution.queue')
@@ -143,6 +149,12 @@ end
 --- Initialize the resolution system
 --- This should be called once during plugin setup
 function M.initialize()
+  -- Prevent multiple initializations
+  if initialized then
+    feedback.show_debug("Resolution system already initialized")
+    return true
+  end
+
   feedback.show_debug("Initializing resolution system...")
 
   -- Load configuration
@@ -172,14 +184,29 @@ function M.initialize()
         registered_count = registered_count + 1
         feedback.show_debug("Registered provider: " .. provider_info.name)
       else
+        -- Track failed registration
+        failed_providers[provider_info.name] = {
+          name = provider_info.name,
+          module = provider_info.module,
+          error = error or "unknown error",
+          reason = "registration_failed"
+        }
         feedback.show_warning("Failed to register provider '" .. provider_info.name .. "': " .. (error or "unknown error"))
       end
     else
+      -- Track module loading failure
+      failed_providers[provider_info.name] = {
+        name = provider_info.name,
+        module = provider_info.module,
+        error = "Provider module not available or invalid",
+        reason = "module_not_found"
+      }
       feedback.show_debug("Provider module not available: " .. provider_info.module)
     end
   end
 
   feedback.show_debug("Resolution system initialized with " .. registered_count .. " providers")
+  initialized = true
   return true
 end
 
@@ -202,11 +229,12 @@ function M.unregister_provider(name)
   return true
 end
 
---- Get detailed information about all registered providers
+--- Get detailed information about all providers (registered and failed)
 --- @return table provider_info Array of provider information
 function M.get_provider_info()
   local info = {}
 
+  -- Add successfully registered providers
   for name, provider in pairs(provider_registry) do
     local metadata = provider:get_metadata()
     local available = M.is_provider_available(name)
@@ -219,7 +247,25 @@ function M.get_provider_info()
       initialized = metadata.initialized,
       authenticated = metadata.authenticated,
       requires_network = metadata.requires_network,
-      config_files = metadata.config_files
+      config_files = metadata.config_files,
+      status = "registered"
+    })
+  end
+
+  -- Add failed providers
+  for name, failure_info in pairs(failed_providers) do
+    table.insert(info, {
+      name = name,
+      description = "Failed to load: " .. failure_info.error,
+      enabled = config.is_provider_enabled(name),
+      available = false,
+      initialized = false,
+      authenticated = false,
+      requires_network = false,
+      config_files = {},
+      status = "failed",
+      error = failure_info.error,
+      reason = failure_info.reason
     })
   end
 
@@ -268,6 +314,8 @@ function M.cleanup()
   end
 
   provider_registry = {}
+  failed_providers = {}
+  initialized = false
   config.invalidate_cache()
 
   feedback.show_debug("Cleaned up " .. cleanup_count .. " providers")

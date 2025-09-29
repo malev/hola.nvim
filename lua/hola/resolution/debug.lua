@@ -128,24 +128,39 @@ function M.get_provider_status()
 
   for _, info in ipairs(provider_info) do
     local status_icon = "✓"
-    if not info.available then
+    local status_text = ""
+
+    if info.status == "failed" then
       status_icon = "✗"
+      status_text = "Failed"
+    elseif not info.available then
+      status_icon = "✗"
+      status_text = "Unavailable"
     elseif not info.enabled then
       status_icon = "○"
+      status_text = "Disabled"
+    else
+      status_icon = "✓"
+      status_text = "Ready"
     end
-
-    local status_text = info.enabled and (info.available and "Ready" or "Unavailable") or "Disabled"
 
     table.insert(lines, string.format("%s %s - %s", status_icon, info.name, status_text))
     table.insert(lines, string.format("    Description: %s", info.description))
 
-    if info.requires_network then
-      table.insert(lines, string.format("    Network: Required, Auth: %s",
-        info.authenticated and "Yes" or "No"))
-    end
+    -- Show error details for failed providers
+    if info.status == "failed" then
+      table.insert(lines, string.format("    Error: %s", info.error or "Unknown error"))
+      table.insert(lines, string.format("    Reason: %s", info.reason or "unknown"))
+    else
+      -- Show normal details for working providers
+      if info.requires_network then
+        table.insert(lines, string.format("    Network: Required, Auth: %s",
+          info.authenticated and "Yes" or "No"))
+      end
 
-    if info.config_files and #info.config_files > 0 then
-      table.insert(lines, string.format("    Config Files: %s", table.concat(info.config_files, ", ")))
+      if info.config_files and #info.config_files > 0 then
+        table.insert(lines, string.format("    Config Files: %s", table.concat(info.config_files, ", ")))
+      end
     end
 
     table.insert(lines, "")
