@@ -192,12 +192,7 @@ function VaultProvider:resolve(identifier)
     return nil, "invalid_identifier"
   end
 
-  -- Check cache first
-  local cache_key = "vault:" .. path .. "#" .. field
-  local cached_value = self:cache_get(cache_key)
-  if cached_value then
-    return cached_value, nil
-  end
+  -- Skip caching - always fetch fresh values from vault
 
   -- Check authentication
   if not self:is_authenticated() then
@@ -211,8 +206,6 @@ function VaultProvider:resolve(identifier)
   local success, result = self:_execute_vault_command(cmd)
 
   if success then
-    -- Cache the result
-    self:cache_set(cache_key, result, self._config.cache_ttl)
     return result, nil
   else
     -- Map vault-specific errors to standard error types
@@ -237,7 +230,7 @@ function VaultProvider:get_metadata()
   -- Add vault-specific metadata
   base_metadata.vault_available = self:_is_vault_available()
   base_metadata.vault_authenticated = self:is_authenticated()
-  base_metadata.cache_stats = self:cache_stats()
+  -- No caching used for vault secrets
 
   return base_metadata
 end
