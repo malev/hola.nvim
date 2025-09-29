@@ -170,7 +170,8 @@ function M.initialize()
   local providers_to_register = {
     { name = "env", module = "hola.resolution.providers.env" },
     { name = "oauth", module = "hola.resolution.providers.oauth" },
-    { name = "vault", module = "hola.resolution.providers.vault" }
+    { name = "vault", module = "hola.resolution.providers.vault" },
+    { name = "refs", module = "hola.resolution.providers.refs" }
   }
 
   local registered_count = 0
