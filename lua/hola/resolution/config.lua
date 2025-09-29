@@ -11,6 +11,12 @@ local DEFAULT_CONFIG = {
       enabled = true,
       search_paths = { ".", "..", "~/.config/hola" },
       cache_ttl = 300, -- 5 minutes
+    },
+    vault = {
+      enabled = true,
+      timeout_seconds = 10,
+      cache_ttl = 300, -- 5 minutes
+      auto_authenticate = true,
     }
   },
   debug = {

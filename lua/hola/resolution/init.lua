@@ -157,8 +157,8 @@ function M.initialize()
   -- Register built-in providers
   local providers_to_register = {
     { name = "env", module = "hola.resolution.providers.env" },
-    { name = "oauth", module = "hola.resolution.providers.oauth" }
-    -- Future providers will be added here
+    { name = "oauth", module = "hola.resolution.providers.oauth" },
+    { name = "vault", module = "hola.resolution.providers.vault" }
   }
 
   local registered_count = 0
