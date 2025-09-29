@@ -269,10 +269,8 @@ function OAuthProvider:resolve(identifier)
     return nil, error_type .. ": " .. (oauth_error or "Unknown OAuth error")
   end
 
-  -- Format token (typically as Bearer token)
-  local formatted_token = "Bearer " .. token
-
-  return formatted_token, nil
+  -- Return raw token - let users format it as needed in their requests
+  return token, nil
 end
 
 --- Get provider-specific metadata
