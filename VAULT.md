@@ -1,33 +1,28 @@
-# HashiCorp Vault Integration
+# HashiCorp Vault Provider
 
-This document provides comprehensive information about using HashiCorp Vault with hola.nvim for enterprise-grade secret management.
+This document covers the HashiCorp Vault provider in hola.nvim's provider system.
 
 ## Overview
 
-hola.nvim integrates with HashiCorp Vault to provide secure secret management for your HTTP requests. Instead of storing sensitive information in `.env` files or environment variables, you can fetch secrets directly from Vault using a simple syntax.
+The `vault` provider fetches secrets from HashiCorp Vault using the `{{vault:path#field}}` syntax. This provides enterprise-grade secret management for your HTTP requests.
+
+> See [PROVIDERS.md](PROVIDERS.md) for an overview of the provider system and its security benefits.
 
 ## Quick Start
 
-1. **Install Vault CLI**: Download and install the HashiCorp Vault CLI from [vaultproject.io](https://www.vaultproject.io/)
-
-2. **Authenticate with Vault**: Configure your Vault authentication
+1. **Install and authenticate with Vault CLI**:
    ```bash
+   # Install from https://www.vaultproject.io/
    vault auth -method=userpass username=your-username
-   # or use other auth methods like LDAP, AWS, etc.
    ```
 
-3. **Enable Vault in hola.nvim**:
-   ```lua
-   require("hola").setup({
-     vault = { enabled = true }
-   })
-   ```
-
-4. **Use Vault secrets in your requests**:
+2. **Use Vault secrets in your requests**:
    ```http
    GET https://api.example.com/secure
    Authorization: Bearer {{vault:secret/tokens#api_key}}
    ```
+
+The Vault provider works automatically - no additional configuration needed in hola.nvim.
 
 ## Syntax
 
@@ -48,16 +43,6 @@ Authorization: Bearer {{vault:secret/api#token}}
 POST https://db.example.com/query
 X-DB-User: {{vault:secret/database#username}}
 X-DB-Pass: {{vault:secret/database#password}}
-
-### Mixed Variables
-POST https://{{BASE_URL}}/api
-Authorization: Bearer {{vault:secret/tokens#api_key}}
-Content-Type: application/json
-
-{
-  "environment": "{{ENVIRONMENT}}",
-  "secret_key": "{{vault:secret/app#secret_key}}"
-}
 ```
 
 ## Commands
@@ -70,40 +55,43 @@ Check the current status of your Vault integration:
 :HolaVaultStatus
 ```
 
-This command shows:
+Shows:
 - Vault CLI availability and version
 - Authentication status
 - Connection to Vault server
 - Any configuration issues
 
-### `:HolaEnableVault`
-Enable Vault integration for the current session:
-```
-:HolaEnableVault
+## Usage with Other Providers
+
+The Vault provider works seamlessly with other providers:
+
+```toml
+# oauth.toml - Use Vault for OAuth credentials
+[oauth.secure_service]
+token_url = "https://auth.example.com/oauth/token"
+client_id = "{{vault:secret/oauth#client_id}}"
+client_secret = "{{vault:secret/oauth#client_secret}}"
 ```
 
-### `:HolaDisableVault`
-Disable Vault integration for the current session:
-```
-:HolaDisableVault
+```bash
+# refs - Create shortcuts to complex Vault paths
+API_TOKEN=vault:kv/data/prod/api#token
+DB_PASSWORD=vault:kv/data/prod/database#password
 ```
 
-## Configuration
-
-```lua
-require("hola").setup({
-  vault = {
-    enabled = true,  -- Enable/disable vault integration
-  }
-})
+```http
+# HTTP requests - Mix providers as needed
+GET https://api.example.com/secure
+Authorization: Bearer {{refs:API_TOKEN}}
+X-DB-Password: {{vault:secret/db#password}}
+X-Service-Token: {{oauth:secure_service}}
 ```
 
 ## Security Features
 
-### Memory-Only Caching
-- Secrets are cached in memory for 5 minutes to improve performance
-- No secrets are written to disk
-- Cache is cleared when Neovim exits
+- **Memory-Only Caching**: Secrets cached for 5 minutes, never written to disk
+- **Automatic Cleanup**: Cache cleared when Neovim exits
+- **CLI Integration**: Uses your existing Vault CLI authentication
 
 ## Troubleshooting
 

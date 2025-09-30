@@ -1,6 +1,6 @@
 # Hola.nvim: Your In-Neovim REST Command Center
 
-> Send HTTP requests without leaving the comfort of your editor, with built-in environment and dotenv support!
+> Send HTTP requests without leaving the comfort of your editor, with built-in secrets management!
 
 ## Installation: Get Ready to Say "¡Hola!" 👋
 
@@ -115,6 +115,54 @@ require("hola").setup({
 })
 ```
 
+## Configuration Management 🔧
+
+`hola.nvim` provides flexible configuration management through **providers** - pluggable systems that resolve template variables using the pattern `{{provider:identifier}}` by fetching values from various sources.
+
+### Unified Provider Architecture
+
+All configuration values are accessed through providers, ensuring consistent behavior and security practices:
+
+- **`{{env:VARIABLE}}`** - Environment variables and `.env` files
+- **`{{vault:secret/path#field}}`** - HashiCorp Vault secrets ([VAULT.md](VAULT.md))
+- **`{{oauth:service}}`** - OAuth 2.0 access tokens ([OAUTH.md](OAUTH.md))
+- **`{{refs:VARIABLE}}`** - Reference aliases to other providers
+
+```http
+GET {{env:API_URL}}/users?debug={{env:DEBUG}}
+Authorization: Bearer {{oauth:my_service}}
+X-API-Key: {{vault:secret/api#key}}
+X-Shortcut: {{refs:COMMON_TOKEN}}
+```
+
+### Environment Provider
+
+The `env` provider handles both system environment variables and `.env` files:
+
+```bash
+# .env
+API_URL=https://api.example.com
+DEBUG=true
+TIMEOUT=30
+```
+
+```http
+GET {{env:API_URL}}/users?debug={{env:DEBUG}}&timeout={{env:TIMEOUT}}
+```
+
+### Provider Benefits
+
+**Security**: External providers offer secure secret storage options beyond environment variables and version control.
+
+**Simplicity**: Complex authentication flows (OAuth, Vault) are handled automatically with caching and refresh logic.
+
+**Configuration Files:**
+- `oauth.toml` - OAuth service configurations
+- `refs` - Variable reference mappings
+- `.env` - Local environment variables (gitignored)
+
+> See [PROVIDERS.md](PROVIDERS.md) for detailed provider documentation, security benefits, and configuration examples.
+
 ## Authentication Support 🔐
 
 `hola.nvim` supports multiple authentication methods with automatic processing and template variable support.
@@ -131,10 +179,10 @@ Authorization: Basic username:password
 
 The plugin automatically detects `Authorization: Basic username:password` headers and encodes them to `Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=` before sending.
 
-**Works with variables:**
+**Works with providers:**
 ```http
 GET https://api.example.com/protected
-Authorization: Basic {{USERNAME}}:{{PASSWORD}}
+Authorization: Basic {{env:USERNAME}}:{{env:PASSWORD}}
 ```
 
 ### Bearer Token Authentication
@@ -147,10 +195,10 @@ GET https://api.example.com/data
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-**Works with variables:**
+**Works with providers:**
 ```http
 GET https://api.example.com/data
-Authorization: Bearer {{API_TOKEN}}
+Authorization: Bearer {{env:API_TOKEN}}
 ```
 
 ### API Key Authentication
@@ -163,16 +211,16 @@ GET https://api.example.com/users
 Authorization: ApiKey sk-live_abc123def456ghi789
 ```
 
-**Works with variables:**
+**Works with providers:**
 ```http
 GET https://api.example.com/users
-Authorization: ApiKey {{API_KEY}}
+Authorization: ApiKey {{env:API_KEY}}
 ```
 
 **Alternative header formats:**
 ```http
 GET https://api.example.com/users
-X-API-Key: {{API_KEY}}
+X-API-Key: {{env:API_KEY}}
 ```
 
 Note: The `Authorization: ApiKey` format ensures consistent formatting, while custom headers like `X-API-Key` are passed through unchanged.
@@ -184,98 +232,30 @@ Note: The `Authorization: ApiKey` format ensures consistent formatting, while cu
 **OAuth Token Example:**
 ```http
 GET https://api.example.com/protected
-Authorization: Bearer {{OAUTH_TOKEN}}
+Authorization: Bearer {{oauth:my_service}}
 ```
 
 **Multi-environment Support:**
 ```http
 ### Development API
 GET https://dev-api.example.com/data
-Authorization: Bearer {{OAUTH_TOKEN_DEV}}
+Authorization: Bearer {{oauth:dev_service}}
 
 ### Production API
 GET https://api.example.com/data
-Authorization: Bearer {{OAUTH_TOKEN}}
+Authorization: Bearer {{oauth:prod_service}}
 ```
 
-**Supported Providers:**
+**Supported OAuth Services:**
 - AWS Cognito
 - Auth0
 - Apigee
 - Custom OAuth 2.0 providers
 
-OAuth tokens are automatically obtained, cached, and refreshed as needed. Configuration is handled through `.env` files with provider-specific settings.
+OAuth tokens are automatically obtained, cached, and refreshed as needed. Configuration is handled through `oauth.toml` files with service-specific settings.
 
 > See [OAUTH.md](OAUTH.md) for detailed OAuth configuration, supported flows, and provider examples.
 
-## Power Up Your Requests with Variables and Secrets! ⚙️
-
-`hola.nvim` supports multiple ways to inject dynamic values into your `.http` files:
-
-### Environment Variables and `.env` Files
-
-Use placeholders like `{{VARIABLE_NAME}}` to reference variables from `.env` files or environment variables.
-
-**How it Works:**
-
-When `hola.nvim` processes an `.http` file, it scans for placeholders in the format `{{VARIABLE_NAME}}`. For each placeholder found, it attempts to resolve the value by checking the following sources in order of precedence:
-
-1. **HashiCorp Vault:** `{{vault:secret/path#field}}` - Secure secret management for enterprise environments
-2. **`.env` Files:** Variables from `.env` file in current working directory
-3. **Environment Variables:** System environment variables as fallback
-
-**Example:**
-
-Consider the following `.http` file:
-
-```http
-POST https://postman-echo.com/post
-Content-Type: application/json
-X-API-KEY: {{vault:secret/api#key}}
-X-API-SECRET: {{X_API_SECRET}}
-
-{
-  "data": "some data",
-  "apiKey": "{{API_KEY_FOR_JSON}}"
-}
-```
-
-### HashiCorp Vault Integration 🔐
-
-For enterprise secret management, use `{{vault:path#field}}` syntax to fetch secrets from HashiCorp Vault:
-
-```http
-GET https://api.example.com/secure
-Authorization: Bearer {{vault:secret/tokens#api_key}}
-```
-
-**Setup:**
-1. Install and configure the Vault CLI
-2. Enable vault in your configuration:
-   ```lua
-   require("hola").setup({
-     vault = { enabled = true }
-   })
-   ```
-3. Check vault status: `:HolaVaultStatus`
-
-> See [VAULT.md](VAULT.md) for detailed vault configuration and troubleshooting.
-
-### Standard Environment Variables
-
-Create a `.env` file or use environment variables for traditional secret management:
-
-**.env file:**
-```
-X_API_SECRET=your_super_secret
-API_KEY_FOR_JSON=another_key_from_env
-```
-
-**Environment variables:**
-```bash
-export X_API_SECRET="even_more_secret"
-export API_KEY_FOR_JSON="yet_another_key"
-```
 
 ## Development: Join the "¡Hola!" Brigade! 🧑‍💻
 

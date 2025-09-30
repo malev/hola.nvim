@@ -1,10 +1,10 @@
 local request = require("hola.request")
 local utils = require("hola.utils")
 local ui = require("hola.ui")
-local dotenv = require("hola.dotenv")
 local config = require("hola.config")
 local vault_health = require("hola.vault_health")
 local virtual_text = require("hola.virtual_text")
+local resolution = require("hola.resolution")
 
 local M = {}
 
@@ -12,6 +12,9 @@ local M = {}
 -- @param opts (table|nil) User configuration options
 function M.setup(opts)
 	config.setup(opts)
+
+	-- Initialize the new resolution system
+	resolution.initialize()
 
 	-- If vault is enabled, perform a quick health check and show warnings if needed
 	local vault_config = config.get_vault()
@@ -57,31 +60,20 @@ function M.run_request_under_cursor()
 		return
 	end
 
-	local dotenv_vars = dotenv.load() -- Returns {} if none found
-
-	-- Show "Loading secrets..." if we have provider variables
-	local variables = utils.extract_variables_from_text(request_text)
-	local has_provider_vars = false
-	for _, var in ipairs(variables) do
-		if var.type == "provider" then
-			has_provider_vars = true
-			break
-		end
-	end
-
-	-- Show appropriate loading message
-	if has_provider_vars then
+	-- Check if we have any provider variables to resolve
+	local has_variables = request_text:match("{{[^}]+}}")
+	if has_variables then
 		virtual_text.show_provider_loading()
 	else
 		virtual_text.show_request_sending()
 	end
 
-	-- Compile template with provider support
-	local compiled_text, provider_errors = utils.compile_template_with_providers(request_text, { dotenv_vars, vim.env })
+	-- Resolve all variables using the new resolution system
+	local compiled_text, resolution_errors = resolution.resolve_variables(request_text, {})
 
-	-- Handle provider errors
-	if #provider_errors > 0 then
-		virtual_text.show_provider_error_list(provider_errors)
+	-- Handle resolution errors
+	if #resolution_errors > 0 then
+		virtual_text.show_provider_error_list(resolution_errors)
 		return
 	end
 
@@ -91,7 +83,7 @@ function M.run_request_under_cursor()
 		return
 	end
 
-	-- Update to "Sending..." after secrets are loaded
+	-- Update to "Sending..." after variables are resolved
 	virtual_text.show_request_sending()
 
 	local function on_request_finished(result)

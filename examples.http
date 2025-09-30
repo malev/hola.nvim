@@ -6,10 +6,6 @@ Accept: application/json
 GET http://localhost:8000/slow
 Accept: application/json
 
-### POST echo endpoint
-POST http://localhost:8000/echo
-Accept: application/json
-
 ### POST basic auth endpoint (valid credentials)
 POST http://localhost:8000/secure
 Authorization: Basic admin:secret
@@ -45,28 +41,8 @@ GET http://localhost:8000/apikey
 X-API-Key: secret-api-key-123
 Accept: application/json
 
-### Create a new post
-POST https://jsonplaceholder.typicode.com/posts
-Content-Type: application/json
-X-Custom-Header: MyValue
-
-{"title": "hello"}
-
-### Delete a post
-DELETE https://jsonplaceholder.typicode.com/posts/1
-
-### Slow response
-GET https://fakeresponder.com/?sleep=1000
-
-### Postman echo
-POST https://postman-echo.com/post?hola=que&tal=true
-Content-Type: application/json
-Custom-Header: sardina
-
-["lol"]
-
-### Generate a password
-POST https://api.malev.xyz/api/password
+### Test env var
+GET https://echo-http-requests.appspot.com/push/{{env:VERSION}}
 
 ### =============================================================================
 ### OAuth 2.0 Testing (use with scripts/server.py and .env.oauth-test)
@@ -74,17 +50,17 @@ POST https://api.malev.xyz/api/password
 
 ### OAuth Test - Generic Provider (Default Environment)
 GET http://localhost:8000/oauth-test
-Authorization: Bearer {{OAUTH_TOKEN}}
+Authorization: {{oauth:local_server}}
 Accept: application/json
 
 ### OAuth Test - AWS Cognito Style
 GET http://localhost:8000/oauth-test
-Authorization: Bearer {{OAUTH_TOKEN_COGNITO}}
+Authorization: {{oauth:cognito_local}}
 Accept: application/json
 
 ### OAuth Test - Auth0 Style
 GET http://localhost:8000/oauth-test
-Authorization: Bearer {{OAUTH_TOKEN_AUTH0}}
+Authorization: {{oauth:auth0_local}}
 Accept: application/json
 
 ### OAuth Test - Apigee Style

@@ -1,0 +1,15 @@
+# API credentials
+USERNAME={{vault:secrets/malev.xyz#username}}
+API_KEY={{vault:secret/app#api_key}}
+DB_PASSWORD={{vault:database/prod#password}}
+
+# OAuth services
+GITHUB_TOKEN={{oauth:github}}
+SLACK_TOKEN={{oauth:slack}}
+
+# Environment shortcuts
+DEBUG_MODE={{env:DEBUG}}
+BASE_URL={{env:API_BASE_URL}}
+
+# Complex nested reference
+AUTH_HEADER=Bearer {{oauth:my_service}}
