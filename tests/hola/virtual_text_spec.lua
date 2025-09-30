@@ -26,7 +26,7 @@ describe("virtual_text module", function()
 			"GET /api/test",
 			"Content-Type: application/json",
 			"",
-			'{"test": true}'
+			'{"test": true}',
 		})
 		set_cursor(1, 0)
 		virtual_text.clear()
@@ -134,13 +134,13 @@ describe("virtual_text module", function()
 
 	describe("semantic success messages", function()
 		it("should show response success with status and timing", function()
-			virtual_text.show_success("response", {status = 200, elapsed_ms = 150})
+			virtual_text.show_success("response", { status = 200, elapsed_ms = 150 })
 			local text = get_virtual_text()
 			assert.equals("✔️Response: 200 (150ms)", text)
 		end)
 
 		it("should show response success with unknown timing", function()
-			virtual_text.show_success("response", {status = 404})
+			virtual_text.show_success("response", { status = 404 })
 			local text = get_virtual_text()
 			assert.equals("✔️Response: 404 (?ms)", text)
 		end)
@@ -186,8 +186,8 @@ describe("virtual_text module", function()
 
 		it("should show provider error list", function()
 			local errors = {
-				{variable = "API_KEY", error = "not found"},
-				{variable = "SECRET", error = "invalid format"}
+				{ variable = "API_KEY", error = "not found" },
+				{ variable = "SECRET", error = "invalid format" },
 			}
 			virtual_text.show_provider_error_list(errors)
 			local text, highlight = get_virtual_text()
@@ -197,7 +197,7 @@ describe("virtual_text module", function()
 
 		it("should show single provider error", function()
 			local errors = {
-				{variable = "DATABASE_URL", error = "connection refused"}
+				{ variable = "DATABASE_URL", error = "connection refused" },
 			}
 			virtual_text.show_provider_error_list(errors)
 			local text = get_virtual_text()
@@ -208,7 +208,7 @@ describe("virtual_text module", function()
 	describe("provider error aggregation", function()
 		it("should show single OAuth error", function()
 			local errors = {
-				{variable = "OAUTH_TOKEN_DEV", error = "expired"}
+				{ variable = "OAUTH_TOKEN_DEV", error = "expired" },
 			}
 			virtual_text.show_provider_errors(errors)
 			local text = get_virtual_text()
@@ -217,7 +217,7 @@ describe("virtual_text module", function()
 
 		it("should show single provider error", function()
 			local errors = {
-				{variable = "API_SECRET", error = "not configured"}
+				{ variable = "API_SECRET", error = "not configured" },
 			}
 			virtual_text.show_provider_errors(errors)
 			local text = get_virtual_text()
@@ -226,9 +226,9 @@ describe("virtual_text module", function()
 
 		it("should show multiple provider errors", function()
 			local errors = {
-				{variable = "API_KEY", error = "missing"},
-				{variable = "SECRET_TOKEN", error = "invalid"},
-				{variable = "DB_PASSWORD", error = "wrong"}
+				{ variable = "API_KEY", error = "missing" },
+				{ variable = "SECRET_TOKEN", error = "invalid" },
+				{ variable = "DB_PASSWORD", error = "wrong" },
 			}
 			virtual_text.show_provider_errors(errors)
 			local text = get_virtual_text()

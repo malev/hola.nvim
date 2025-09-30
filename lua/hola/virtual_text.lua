@@ -65,7 +65,7 @@ function M.show_success(success_type, details)
 			local env_text = env ~= "default" and " (" .. env .. ")" or ""
 			local expires_text = expires_in and " - expires in " .. expires_in or ""
 			return "✔️OAuth token acquired" .. env_text .. expires_text
-		end
+		end,
 	}
 
 	local message
@@ -117,7 +117,7 @@ function M.show_request_sending()
 end
 
 function M.show_request_success(status, elapsed_ms)
-	M.show_success("response", {status = status, elapsed_ms = elapsed_ms})
+	M.show_success("response", { status = status, elapsed_ms = elapsed_ms })
 end
 
 function M.show_parse_error()

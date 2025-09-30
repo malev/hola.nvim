@@ -42,7 +42,6 @@ function M.get_ui()
 	return user_config.ui
 end
 
-
 --- Update JSON configuration
 -- @param json_opts (table) JSON configuration to merge
 function M.update_json(json_opts)

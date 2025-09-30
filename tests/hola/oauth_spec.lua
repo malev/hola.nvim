@@ -8,7 +8,7 @@ describe("hola oauth module", function()
 
 	describe("get_token", function()
 		it("should return error when OAuth configuration is missing", function()
-			local empty_sources = {{}}
+			local empty_sources = { {} }
 
 			local token, error = oauth.get_token("default", empty_sources)
 
@@ -18,20 +18,22 @@ describe("hola oauth module", function()
 
 		it("should return error when OAuth request fails with 401", function()
 			-- Mock curl response
-			local curl = require('plenary.curl')
+			local curl = require("plenary.curl")
 			local original_post = curl.post
 			curl.post = function()
 				return {
 					status = 401,
-					body = '{"error": "invalid_client", "error_description": "Invalid credentials"}'
+					body = '{"error": "invalid_client", "error_description": "Invalid credentials"}',
 				}
 			end
 
-			local env_sources = {{
-				OAUTH_TOKEN_URL = "http://test.com/token",
-				OAUTH_CLIENT_ID = "test_id",
-				OAUTH_CLIENT_SECRET = "test_secret"
-			}}
+			local env_sources = {
+				{
+					OAUTH_TOKEN_URL = "http://test.com/token",
+					OAUTH_CLIENT_ID = "test_id",
+					OAUTH_CLIENT_SECRET = "test_secret",
+				},
+			}
 
 			local token, error = oauth.get_token("default", env_sources)
 
@@ -44,20 +46,22 @@ describe("hola oauth module", function()
 		end)
 
 		it("should return error when OAuth response is invalid JSON", function()
-			local curl = require('plenary.curl')
+			local curl = require("plenary.curl")
 			local original_post = curl.post
 			curl.post = function()
 				return {
 					status = 200,
-					body = 'invalid json'
+					body = "invalid json",
 				}
 			end
 
-			local env_sources = {{
-				OAUTH_TOKEN_URL = "http://test.com/token",
-				OAUTH_CLIENT_ID = "test_id",
-				OAUTH_CLIENT_SECRET = "test_secret"
-			}}
+			local env_sources = {
+				{
+					OAUTH_TOKEN_URL = "http://test.com/token",
+					OAUTH_CLIENT_ID = "test_id",
+					OAUTH_CLIENT_SECRET = "test_secret",
+				},
+			}
 
 			local token, error = oauth.get_token("default", env_sources)
 
@@ -68,20 +72,22 @@ describe("hola oauth module", function()
 		end)
 
 		it("should return error when OAuth response lacks access_token", function()
-			local curl = require('plenary.curl')
+			local curl = require("plenary.curl")
 			local original_post = curl.post
 			curl.post = function()
 				return {
 					status = 200,
-					body = '{"token_type": "Bearer", "expires_in": 3600}'
+					body = '{"token_type": "Bearer", "expires_in": 3600}',
 				}
 			end
 
-			local env_sources = {{
-				OAUTH_TOKEN_URL = "http://test.com/token",
-				OAUTH_CLIENT_ID = "test_id",
-				OAUTH_CLIENT_SECRET = "test_secret"
-			}}
+			local env_sources = {
+				{
+					OAUTH_TOKEN_URL = "http://test.com/token",
+					OAUTH_CLIENT_ID = "test_id",
+					OAUTH_CLIENT_SECRET = "test_secret",
+				},
+			}
 
 			local token, error = oauth.get_token("default", env_sources)
 
@@ -92,26 +98,28 @@ describe("hola oauth module", function()
 		end)
 
 		it("should successfully fetch and cache OAuth token with basic_auth", function()
-			local curl = require('plenary.curl')
+			local curl = require("plenary.curl")
 			local original_post = curl.post
 			local captured_request = nil
 
 			curl.post = function(url, options)
-				captured_request = {url = url, options = options}
+				captured_request = { url = url, options = options }
 				return {
 					status = 200,
-					body = '{"access_token": "test_token_123", "token_type": "Bearer", "expires_in": 3600}'
+					body = '{"access_token": "test_token_123", "token_type": "Bearer", "expires_in": 3600}',
 				}
 			end
 
-			local env_sources = {{
-				OAUTH_TOKEN_URL = "http://test.com/oauth/token",
-				OAUTH_CLIENT_ID = "test_client_id",
-				OAUTH_CLIENT_SECRET = "test_client_secret",
-				OAUTH_GRANT_TYPE = "client_credentials",
-				OAUTH_SCOPE = "read:users",
-				OAUTH_AUTH_METHOD = "basic_auth"
-			}}
+			local env_sources = {
+				{
+					OAUTH_TOKEN_URL = "http://test.com/oauth/token",
+					OAUTH_CLIENT_ID = "test_client_id",
+					OAUTH_CLIENT_SECRET = "test_client_secret",
+					OAUTH_GRANT_TYPE = "client_credentials",
+					OAUTH_SCOPE = "read:users",
+					OAUTH_AUTH_METHOD = "basic_auth",
+				},
+			}
 
 			local token, error = oauth.get_token("default", env_sources)
 
@@ -128,24 +136,26 @@ describe("hola oauth module", function()
 		end)
 
 		it("should successfully fetch OAuth token with form_data method", function()
-			local curl = require('plenary.curl')
+			local curl = require("plenary.curl")
 			local original_post = curl.post
 			local captured_request = nil
 
 			curl.post = function(url, options)
-				captured_request = {url = url, options = options}
+				captured_request = { url = url, options = options }
 				return {
 					status = 200,
-					body = '{"access_token": "apigee_token_456", "token_type": "Bearer", "expires_in": 1800}'
+					body = '{"access_token": "apigee_token_456", "token_type": "Bearer", "expires_in": 1800}',
 				}
 			end
 
-			local env_sources = {{
-				OAUTH_TOKEN_URL = "http://apigee.com/oauth/v2/accesstoken",
-				OAUTH_CLIENT_ID = "apigee_client",
-				OAUTH_CLIENT_SECRET = "apigee_secret",
-				OAUTH_AUTH_METHOD = "form_data"
-			}}
+			local env_sources = {
+				{
+					OAUTH_TOKEN_URL = "http://apigee.com/oauth/v2/accesstoken",
+					OAUTH_CLIENT_ID = "apigee_client",
+					OAUTH_CLIENT_SECRET = "apigee_secret",
+					OAUTH_AUTH_METHOD = "form_data",
+				},
+			}
 
 			local token, error = oauth.get_token("default", env_sources)
 
@@ -162,25 +172,27 @@ describe("hola oauth module", function()
 		end)
 
 		it("should successfully fetch OAuth token with json_body method", function()
-			local curl = require('plenary.curl')
+			local curl = require("plenary.curl")
 			local original_post = curl.post
 			local captured_request = nil
 
 			curl.post = function(url, options)
-				captured_request = {url = url, options = options}
+				captured_request = { url = url, options = options }
 				return {
 					status = 200,
-					body = '{"access_token": "auth0_token_789", "token_type": "Bearer", "expires_in": 86400}'
+					body = '{"access_token": "auth0_token_789", "token_type": "Bearer", "expires_in": 86400}',
 				}
 			end
 
-			local env_sources = {{
-				OAUTH_TOKEN_URL = "http://auth0.com/oauth/token",
-				OAUTH_CLIENT_ID = "auth0_client",
-				OAUTH_CLIENT_SECRET = "auth0_secret",
-				OAUTH_AUTH_METHOD = "json_body",
-				OAUTH_AUDIENCE = "https://api.example.com"
-			}}
+			local env_sources = {
+				{
+					OAUTH_TOKEN_URL = "http://auth0.com/oauth/token",
+					OAUTH_CLIENT_ID = "auth0_client",
+					OAUTH_CLIENT_SECRET = "auth0_secret",
+					OAUTH_AUTH_METHOD = "json_body",
+					OAUTH_AUDIENCE = "https://api.example.com",
+				},
+			}
 
 			local token, error = oauth.get_token("default", env_sources)
 
@@ -199,22 +211,24 @@ describe("hola oauth module", function()
 		end)
 
 		it("should handle multi-environment configurations", function()
-			local curl = require('plenary.curl')
+			local curl = require("plenary.curl")
 			local original_post = curl.post
 
 			curl.post = function()
 				return {
 					status = 200,
-					body = '{"access_token": "staging_token_999", "token_type": "Bearer", "expires_in": 3600}'
+					body = '{"access_token": "staging_token_999", "token_type": "Bearer", "expires_in": 3600}',
 				}
 			end
 
-			local env_sources = {{
-				-- Staging environment configuration
-				OAUTH_TOKEN_URL_STAGING = "http://staging-auth.com/token",
-				OAUTH_CLIENT_ID_STAGING = "staging_client",
-				OAUTH_CLIENT_SECRET_STAGING = "staging_secret"
-			}}
+			local env_sources = {
+				{
+					-- Staging environment configuration
+					OAUTH_TOKEN_URL_STAGING = "http://staging-auth.com/token",
+					OAUTH_CLIENT_ID_STAGING = "staging_client",
+					OAUTH_CLIENT_SECRET_STAGING = "staging_secret",
+				},
+			}
 
 			local token, error = oauth.get_token("staging", env_sources)
 
@@ -225,7 +239,7 @@ describe("hola oauth module", function()
 		end)
 
 		it("should return cached token without making request", function()
-			local curl = require('plenary.curl')
+			local curl = require("plenary.curl")
 			local original_post = curl.post
 			local request_count = 0
 
@@ -233,15 +247,17 @@ describe("hola oauth module", function()
 				request_count = request_count + 1
 				return {
 					status = 200,
-					body = '{"access_token": "cached_token_111", "token_type": "Bearer", "expires_in": 3600}'
+					body = '{"access_token": "cached_token_111", "token_type": "Bearer", "expires_in": 3600}',
 				}
 			end
 
-			local env_sources = {{
-				OAUTH_TOKEN_URL = "http://test.com/token",
-				OAUTH_CLIENT_ID = "test_id",
-				OAUTH_CLIENT_SECRET = "test_secret"
-			}}
+			local env_sources = {
+				{
+					OAUTH_TOKEN_URL = "http://test.com/token",
+					OAUTH_CLIENT_ID = "test_id",
+					OAUTH_CLIENT_SECRET = "test_secret",
+				},
+			}
 
 			-- First request should make HTTP call
 			local token1, error1 = oauth.get_token("default", env_sources)
@@ -259,24 +275,26 @@ describe("hola oauth module", function()
 		end)
 
 		it("should handle custom headers configuration", function()
-			local curl = require('plenary.curl')
+			local curl = require("plenary.curl")
 			local original_post = curl.post
 			local captured_request = nil
 
 			curl.post = function(url, options)
-				captured_request = {url = url, options = options}
+				captured_request = { url = url, options = options }
 				return {
 					status = 200,
-					body = '{"access_token": "custom_token_222", "token_type": "Bearer", "expires_in": 3600}'
+					body = '{"access_token": "custom_token_222", "token_type": "Bearer", "expires_in": 3600}',
 				}
 			end
 
-			local env_sources = {{
-				OAUTH_TOKEN_URL = "http://test.com/token",
-				OAUTH_CLIENT_ID = "test_id",
-				OAUTH_CLIENT_SECRET = "test_secret",
-				OAUTH_CUSTOM_HEADERS = "X-API-Version:2.0,X-Source:hola-nvim"
-			}}
+			local env_sources = {
+				{
+					OAUTH_TOKEN_URL = "http://test.com/token",
+					OAUTH_CLIENT_ID = "test_id",
+					OAUTH_CLIENT_SECRET = "test_secret",
+					OAUTH_CUSTOM_HEADERS = "X-API-Version:2.0,X-Source:hola-nvim",
+				},
+			}
 
 			local token, error = oauth.get_token("default", env_sources)
 
@@ -292,23 +310,25 @@ describe("hola oauth module", function()
 	describe("clear_cache", function()
 		it("should clear specific environment cache", function()
 			-- Setup mock and get tokens for different environments
-			local curl = require('plenary.curl')
+			local curl = require("plenary.curl")
 			local original_post = curl.post
 			curl.post = function()
 				return {
 					status = 200,
-					body = '{"access_token": "test_token", "token_type": "Bearer", "expires_in": 3600}'
+					body = '{"access_token": "test_token", "token_type": "Bearer", "expires_in": 3600}',
 				}
 			end
 
-			local env_sources = {{
-				OAUTH_TOKEN_URL = "http://test.com/token",
-				OAUTH_CLIENT_ID = "test_id",
-				OAUTH_CLIENT_SECRET = "test_secret",
-				OAUTH_TOKEN_URL_STAGING = "http://staging.com/token",
-				OAUTH_CLIENT_ID_STAGING = "staging_id",
-				OAUTH_CLIENT_SECRET_STAGING = "staging_secret"
-			}}
+			local env_sources = {
+				{
+					OAUTH_TOKEN_URL = "http://test.com/token",
+					OAUTH_CLIENT_ID = "test_id",
+					OAUTH_CLIENT_SECRET = "test_secret",
+					OAUTH_TOKEN_URL_STAGING = "http://staging.com/token",
+					OAUTH_CLIENT_ID_STAGING = "staging_id",
+					OAUTH_CLIENT_SECRET_STAGING = "staging_secret",
+				},
+			}
 
 			-- Get tokens for both environments
 			oauth.get_token("default", env_sources)
@@ -332,20 +352,22 @@ describe("hola oauth module", function()
 
 		it("should clear all cache when no environment specified", function()
 			-- Similar setup as above but clear all
-			local curl = require('plenary.curl')
+			local curl = require("plenary.curl")
 			local original_post = curl.post
 			curl.post = function()
 				return {
 					status = 200,
-					body = '{"access_token": "test_token", "token_type": "Bearer", "expires_in": 3600}'
+					body = '{"access_token": "test_token", "token_type": "Bearer", "expires_in": 3600}',
 				}
 			end
 
-			local env_sources = {{
-				OAUTH_TOKEN_URL = "http://test.com/token",
-				OAUTH_CLIENT_ID = "test_id",
-				OAUTH_CLIENT_SECRET = "test_secret"
-			}}
+			local env_sources = {
+				{
+					OAUTH_TOKEN_URL = "http://test.com/token",
+					OAUTH_CLIENT_ID = "test_id",
+					OAUTH_CLIENT_SECRET = "test_secret",
+				},
+			}
 
 			oauth.get_token("default", env_sources)
 
@@ -368,20 +390,22 @@ describe("hola oauth module", function()
 		end)
 
 		it("should return status information for cached tokens", function()
-			local curl = require('plenary.curl')
+			local curl = require("plenary.curl")
 			local original_post = curl.post
 			curl.post = function()
 				return {
 					status = 200,
-					body = '{"access_token": "status_token", "token_type": "Bearer", "expires_in": 1800}'
+					body = '{"access_token": "status_token", "token_type": "Bearer", "expires_in": 1800}',
 				}
 			end
 
-			local env_sources = {{
-				OAUTH_TOKEN_URL = "http://test.com/token",
-				OAUTH_CLIENT_ID = "test_id",
-				OAUTH_CLIENT_SECRET = "test_secret"
-			}}
+			local env_sources = {
+				{
+					OAUTH_TOKEN_URL = "http://test.com/token",
+					OAUTH_CLIENT_ID = "test_id",
+					OAUTH_CLIENT_SECRET = "test_secret",
+				},
+			}
 
 			oauth.get_token("default", env_sources)
 
@@ -398,20 +422,22 @@ describe("hola oauth module", function()
 
 	describe("get_cache_stats", function()
 		it("should return correct cache statistics", function()
-			local curl = require('plenary.curl')
+			local curl = require("plenary.curl")
 			local original_post = curl.post
 			curl.post = function()
 				return {
 					status = 200,
-					body = '{"access_token": "stats_token", "token_type": "Bearer", "expires_in": 3600}'
+					body = '{"access_token": "stats_token", "token_type": "Bearer", "expires_in": 3600}',
 				}
 			end
 
-			local env_sources = {{
-				OAUTH_TOKEN_URL = "http://test.com/token",
-				OAUTH_CLIENT_ID = "test_id",
-				OAUTH_CLIENT_SECRET = "test_secret"
-			}}
+			local env_sources = {
+				{
+					OAUTH_TOKEN_URL = "http://test.com/token",
+					OAUTH_CLIENT_ID = "test_id",
+					OAUTH_CLIENT_SECRET = "test_secret",
+				},
+			}
 
 			-- Get a token to populate cache
 			oauth.get_token("default", env_sources)
