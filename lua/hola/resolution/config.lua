@@ -20,7 +20,7 @@ local DEFAULT_CONFIG = {
     }
   },
   debug = {
-    enabled = true,
+    enabled = false,
     max_audit_entries = 100,
     redact_sensitive = true
   },
