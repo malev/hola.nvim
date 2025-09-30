@@ -10,7 +10,7 @@ describe("hola provider variable parsing", function()
 					type = "provider",
 					provider = "vault",
 					path = "secret/api",
-					field = "token"
+					field = "token",
 				}, result)
 			end)
 
@@ -21,7 +21,7 @@ describe("hola provider variable parsing", function()
 					type = "provider",
 					provider = "vault",
 					path = "secret/deep/nested/path",
-					field = "key"
+					field = "key",
 				}, result)
 			end)
 
@@ -32,7 +32,7 @@ describe("hola provider variable parsing", function()
 					type = "provider",
 					provider = "aws-secrets",
 					path = "prod/db",
-					field = "password"
+					field = "password",
 				}, result)
 			end)
 
@@ -43,7 +43,7 @@ describe("hola provider variable parsing", function()
 					type = "provider",
 					provider = "azure-kv",
 					path = "app/config",
-					field = "api_key"
+					field = "api_key",
 				}, result)
 			end)
 
@@ -54,7 +54,7 @@ describe("hola provider variable parsing", function()
 					type = "provider",
 					provider = "vault",
 					path = "secret/path",
-					field = "field_name"
+					field = "field_name",
 				}, result)
 			end)
 
@@ -65,7 +65,7 @@ describe("hola provider variable parsing", function()
 					type = "provider",
 					provider = "vault",
 					path = "secret/path",
-					field = "field-name"
+					field = "field-name",
 				}, result)
 			end)
 
@@ -76,7 +76,7 @@ describe("hola provider variable parsing", function()
 					type = "provider",
 					provider = "vault",
 					path = "secret/api-v2/tokens",
-					field = "bearer_token"
+					field = "bearer_token",
 				}, result)
 			end)
 
@@ -87,7 +87,7 @@ describe("hola provider variable parsing", function()
 					type = "provider",
 					provider = "vault",
 					path = "secret/api_v2/tokens",
-					field = "bearer_token"
+					field = "bearer_token",
 				}, result)
 			end)
 
@@ -98,7 +98,7 @@ describe("hola provider variable parsing", function()
 					type = "provider",
 					provider = "vault",
 					path = "secret/api.v2/tokens",
-					field = "bearer.token"
+					field = "bearer.token",
 				}, result)
 			end)
 
@@ -109,7 +109,7 @@ describe("hola provider variable parsing", function()
 					type = "provider",
 					provider = "vault",
 					path = "kv/my-app_prod.config",
-					field = "api_key-primary"
+					field = "api_key-primary",
 				}, result)
 			end)
 		end)
@@ -120,7 +120,7 @@ describe("hola provider variable parsing", function()
 				local result = utils.parse_variable_reference(input)
 				assert.are.same({
 					type = "traditional",
-					name = "vault:secret/api"
+					name = "vault:secret/api",
 				}, result)
 			end)
 
@@ -129,7 +129,7 @@ describe("hola provider variable parsing", function()
 				local result = utils.parse_variable_reference(input)
 				assert.are.same({
 					type = "traditional",
-					name = "vault#token"
+					name = "vault#token",
 				}, result)
 			end)
 
@@ -138,7 +138,7 @@ describe("hola provider variable parsing", function()
 				local result = utils.parse_variable_reference(input)
 				assert.are.same({
 					type = "traditional",
-					name = ":secret/api#token"
+					name = ":secret/api#token",
 				}, result)
 			end)
 
@@ -147,7 +147,7 @@ describe("hola provider variable parsing", function()
 				local result = utils.parse_variable_reference(input)
 				assert.are.same({
 					type = "traditional",
-					name = "vault:"
+					name = "vault:",
 				}, result)
 			end)
 
@@ -156,7 +156,7 @@ describe("hola provider variable parsing", function()
 				local result = utils.parse_variable_reference(input)
 				assert.are.same({
 					type = "traditional",
-					name = "vault:secret/api#"
+					name = "vault:secret/api#",
 				}, result)
 			end)
 
@@ -165,7 +165,7 @@ describe("hola provider variable parsing", function()
 				local result = utils.parse_variable_reference(input)
 				assert.are.same({
 					type = "traditional",
-					name = "VAULT_TOKEN"
+					name = "VAULT_TOKEN",
 				}, result)
 			end)
 
@@ -174,7 +174,7 @@ describe("hola provider variable parsing", function()
 				local result = utils.parse_variable_reference(input)
 				assert.are.same({
 					type = "traditional",
-					name = "vault:secret/api#token#primary"
+					name = "vault:secret/api#token#primary",
 				}, result)
 			end)
 		end)
@@ -187,7 +187,7 @@ describe("hola provider variable parsing", function()
 					type = "provider",
 					provider = "vault",
 					path = "secret/api:v2",
-					field = "token"
+					field = "token",
 				}, result)
 			end)
 
@@ -198,7 +198,7 @@ describe("hola provider variable parsing", function()
 					type = "provider",
 					provider = "vault",
 					path = "secret/api",
-					field = "token:bearer"
+					field = "token:bearer",
 				}, result)
 			end)
 		end)
@@ -211,7 +211,7 @@ describe("hola provider variable parsing", function()
 					type = "provider",
 					provider = "Vault",
 					path = "secret/api",
-					field = "token"
+					field = "token",
 				}, result)
 			end)
 
@@ -222,7 +222,7 @@ describe("hola provider variable parsing", function()
 					type = "provider",
 					provider = "vault",
 					path = "Secret/API",
-					field = "token"
+					field = "token",
 				}, result)
 			end)
 
@@ -233,7 +233,7 @@ describe("hola provider variable parsing", function()
 					type = "provider",
 					provider = "vault",
 					path = "secret/api",
-					field = "TOKEN"
+					field = "TOKEN",
 				}, result)
 			end)
 		end)
@@ -244,7 +244,7 @@ describe("hola provider variable parsing", function()
 				local result = utils.parse_variable_reference(input)
 				assert.are.same({
 					type = "traditional",
-					name = "vault: secret/api#token"
+					name = "vault: secret/api#token",
 				}, result)
 			end)
 
@@ -253,7 +253,7 @@ describe("hola provider variable parsing", function()
 				local result = utils.parse_variable_reference(input)
 				assert.are.same({
 					type = "traditional",
-					name = "vault:secret/api #token"
+					name = "vault:secret/api #token",
 				}, result)
 			end)
 
@@ -262,7 +262,7 @@ describe("hola provider variable parsing", function()
 				local result = utils.parse_variable_reference(input)
 				assert.are.same({
 					type = "traditional",
-					name = "vault:secret/api# token"
+					name = "vault:secret/api# token",
 				}, result)
 			end)
 		end)
@@ -337,7 +337,7 @@ X-User: {{USERNAME}}
 					provider = "vault",
 					path = "auth/tokens",
 					field = "bearer",
-					original_text = "vault:auth/tokens#bearer"
+					original_text = "vault:auth/tokens#bearer",
 				}, vault_bearer)
 
 				assert.are.same({
@@ -345,20 +345,20 @@ X-User: {{USERNAME}}
 					provider = "vault",
 					path = "auth/api-keys",
 					field = "primary",
-					original_text = "vault:auth/api-keys#primary"
+					original_text = "vault:auth/api-keys#primary",
 				}, vault_api_key)
 
 				-- Check traditional variables
 				assert.are.same({
 					type = "traditional",
 					name = "BASE_URL",
-					original_text = "BASE_URL"
+					original_text = "BASE_URL",
 				}, base_url)
 
 				assert.are.same({
 					type = "traditional",
 					name = "USERNAME",
-					original_text = "USERNAME"
+					original_text = "USERNAME",
 				}, username)
 			end)
 		end)
@@ -387,12 +387,11 @@ X-User: {{USERNAME}}
 					"DB_HOST",
 					"vault:database/prod#password",
 					"vault:external/service#api_key",
-					"USERNAME"
+					"USERNAME",
 				}
 
 				for _, expected in ipairs(expected_vars) do
-					assert.True(vim.tbl_contains(var_texts, expected),
-						"Should find variable: " .. expected)
+					assert.True(vim.tbl_contains(var_texts, expected), "Should find variable: " .. expected)
 				end
 			end)
 
@@ -620,7 +619,7 @@ Content-Type: application/json
 					"database/prod", -- appears twice for username and password
 					"payments/stripe",
 					"email/sendgrid",
-					"email/sendgrid" -- appears twice for api_key and webhook_secret
+					"email/sendgrid", -- appears twice for api_key and webhook_secret
 				}
 
 				assert.equal(5, #vault_paths)

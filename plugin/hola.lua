@@ -9,7 +9,6 @@ end, {
 	desc = "Send request",
 })
 
-
 vim.api.nvim_create_user_command("HolaToggle", function()
 	require("hola").toggle()
 end, {
@@ -30,9 +29,6 @@ end, {
 	nargs = "*",
 	desc = "Toggle JSON formatting between formatted and raw views",
 })
-
-
-
 
 -- Debug commands for the new resolution system
 vim.api.nvim_create_user_command("HolaDebug", function(opts)

@@ -296,7 +296,6 @@ function M.get_request_under_cursor()
 	return _get_lines_as_string(bufnr, range.start_line, range.end_line)
 end
 
-
 --- Compiles a template string by replacing {{var_name}} placeholders.
 -- Dotenv takes precedence over OS env.
 --
@@ -663,8 +662,5 @@ function M.detect_filetype(response)
 
 	return response
 end
-
-
-
 
 return M

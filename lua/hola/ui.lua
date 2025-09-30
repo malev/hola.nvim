@@ -352,7 +352,6 @@ local function has_body(state)
 	return state["response"]["body"] ~= nil
 end
 
-
 function M.create_window(opts, cb)
 	local height = 20
 	local width = 30
@@ -413,7 +412,6 @@ function M.hide(state)
 	vim.api.nvim_buf_delete(state.ui.buf, {})
 	state.ui.visible = false
 end
-
 
 --- Clears the content of the buffer associated with the given feedback information.
 ---

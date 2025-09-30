@@ -234,7 +234,7 @@ Authorization: Basic {{USERNAME}}:{{PASSWORD}}
 Content-Type: application/json
 ]]
 				local compiled_text = utils.compile_template(request_text, {
-					{ USERNAME = "testuser", PASSWORD = "testpass" }
+					{ USERNAME = "testuser", PASSWORD = "testpass" },
 				})
 				local parsed = utils.parse_request(compiled_text)
 				assert.equal("Basic dGVzdHVzZXI6dGVzdHBhc3M=", parsed.headers["authorization"])
@@ -299,7 +299,7 @@ Authorization: Bearer {{API_TOKEN}}
 Content-Type: application/json
 ]]
 				local compiled_text = utils.compile_template(request_text, {
-					{ API_TOKEN = "abc123token" }
+					{ API_TOKEN = "abc123token" },
 				})
 				local parsed = utils.parse_request(compiled_text)
 				assert.equal("Bearer abc123token", parsed.headers["authorization"])
@@ -364,7 +364,7 @@ Authorization: ApiKey {{API_KEY}}
 Content-Type: application/json
 ]]
 				local compiled_text = utils.compile_template(request_text, {
-					{ API_KEY = "secret-api-key-123" }
+					{ API_KEY = "secret-api-key-123" },
 				})
 				local parsed = utils.parse_request(compiled_text)
 				assert.equal("ApiKey secret-api-key-123", parsed.headers["authorization"])

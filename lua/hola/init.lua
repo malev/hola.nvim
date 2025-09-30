@@ -87,7 +87,4 @@ function M.run_request_under_cursor()
 	request.execute(request_options, on_request_finished)
 end
 
-
-
-
 return M

@@ -220,4 +220,3 @@ describe("JSON module", function()
 		end)
 	end)
 end)
-

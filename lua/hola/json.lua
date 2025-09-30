@@ -187,4 +187,3 @@ function M.get_default_config()
 end
 
 return M
-
