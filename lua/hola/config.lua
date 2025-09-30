@@ -5,7 +5,6 @@ local DEFAULT_CONFIG = {
 	-- JSON formatting options
 	json = {
 		auto_format = true, -- Automatically format JSON responses
-		enable_folding = true, -- Enable JSON folding in buffer
 	},
 	-- UI options
 	ui = {

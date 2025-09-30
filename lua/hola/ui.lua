@@ -52,15 +52,9 @@ local function _set_buffer_content(buf_handle, content_lines, filetype)
 
 	-- Set JSON-specific options if applicable
 	if filetype == "json" then
-		local json_config = config.get_json()
-		-- Both foldmethod/foldlevel and conceallevel are window-local options
+		-- Set conceallevel for better JSON visualization
 		local wins = vim.fn.win_findbuf(buf_handle)
 		for _, win_id in ipairs(wins) do
-			if json_config.enable_folding then
-				vim.api.nvim_set_option_value("foldmethod", "syntax", { win = win_id })
-				vim.api.nvim_set_option_value("foldlevel", 2, { win = win_id })
-			end
-			-- Set conceallevel for better JSON visualization
 			vim.api.nvim_set_option_value("conceallevel", 0, { win = win_id })
 		end
 	end

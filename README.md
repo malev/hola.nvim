@@ -15,7 +15,6 @@ Just add this to your `plugins` table in your Neovim configuration (using your p
       -- Optional configuration
       json = {
         auto_format = true,     -- Auto-format JSON responses
-        enable_folding = true,  -- Enable JSON folding in buffer
       },
     })
   end,
@@ -110,7 +109,6 @@ Customize JSON behavior in your Neovim config:
 require("hola").setup({
   json = {
     auto_format = true,        -- Auto-format JSON responses
-    enable_folding = true,     -- Enable JSON folding in buffer
   },
 })
 ```
