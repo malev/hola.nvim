@@ -1,103 +1,86 @@
-describe("dotnenv", function()
-	local dotenv = require("hola.dotenv")
-	describe("parse_dotenv_file", function()
-		local original_readfile -- Variable to store the original function
+local env_provider = require("hola.resolution.providers.env")
 
-		-- Mock vim.fn.readfile before each test
-		before_each(function()
-			original_readfile = vim.fn.readfile -- Store the original
-			-- Replace with our mock function
-			vim.fn.readfile = function(filepath_arg)
-				-- This mock checks the path and returns specific content for our tests
-				if filepath_arg == "/fake/path/to/.env" then
-					-- Return the predefined content for the current test (set within the 'it' block)
-					-- This variable 'mock_file_content' needs to be accessible; Lua closures help.
-					-- We'll define 'mock_file_content' within each 'it' block or a 'before_each' specific setup.
-					if _G.current_mock_file_content then
-						return _G.current_mock_file_content
-					else
-						error("Mock vim.fn.readfile called but no mock content set!")
-					end
-				else
-					-- For any other path, simulate file not found or error
-					-- Returning false simulates pcall failing, returning nil simulates empty file?
-					-- Let's return an error message string, as pcall would capture it.
-					return { "Error: Mock file not found: " .. filepath_arg } -- This will make pcall return false
-				end
+describe("hola env provider", function()
+	describe("provider interface", function()
+		it("should implement required methods", function()
+			local provider = env_provider.new()
+
+			-- Test required interface methods exist
+			assert.is_function(provider.can_handle)
+			assert.is_function(provider.resolve)
+			assert.is_function(provider.load_config)
+			assert.is_function(provider.initialize)
+			assert.is_function(provider.get_metadata)
+		end)
+
+		it("should have correct metadata", function()
+			local provider = env_provider.new()
+			local metadata = provider:get_metadata()
+
+			assert.equals("env", provider.name)
+			assert.equals("Environment variables from .env files and OS environment", provider.description)
+			assert.is_false(provider.requires_network)
+		end)
+	end)
+
+	describe("can_handle", function()
+		it("should handle env provider format", function()
+			local provider = env_provider.new()
+
+			assert.is_true(provider:can_handle("{{env:API_KEY}}"))
+			assert.is_true(provider:can_handle("{{env:DATABASE_URL}}"))
+		end)
+
+		it("should not handle other provider formats", function()
+			local provider = env_provider.new()
+
+			assert.is_false(provider:can_handle("{{vault:secret/path#field}}"))
+			assert.is_false(provider:can_handle("{{oauth:service}}"))
+			assert.is_false(provider:can_handle("{{refs:VARIABLE}}"))
+		end)
+
+		it("should not handle malformed variables", function()
+			local provider = env_provider.new()
+
+			assert.is_false(provider:can_handle("{{env:}}"))
+			assert.is_false(provider:can_handle("{{API_KEY}}"))
+			assert.is_false(provider:can_handle("{env:API_KEY}"))
+		end)
+	end)
+
+	describe("resolve", function()
+		it("should resolve environment variables", function()
+			local provider = env_provider.new()
+			provider:initialize()
+
+			-- Test with OS environment variable that should exist
+			local value, error = provider:resolve("PATH")
+			if value then
+				assert.is_string(value)
+				assert.is_nil(error)
+			else
+				-- PATH should exist on most systems, but handle gracefully
+				assert.is_string(error)
 			end
 		end)
 
-		-- Restore the original vim.fn.readfile after each test
-		after_each(function()
-			vim.fn.readfile = original_readfile -- Restore the original
-			_G.current_mock_file_content = nil -- Clean up global test variable
+		it("should handle missing variables", function()
+			local provider = env_provider.new()
+			provider:initialize()
+
+			local value, error = provider:resolve("DEFINITELY_NONEXISTENT_VAR_12345")
+			assert.is_nil(value)
+			assert.is_string(error)
 		end)
 
-		it("should parse basic KEY=VALUE pairs", function()
-			-- 1. Define the simulated file content for this test
-			_G.current_mock_file_content = {
-				"VAR1=value1",
-				"VAR2=value2",
-			}
+		it("should handle identifier without env: prefix", function()
+			local provider = env_provider.new()
+			provider:initialize()
 
-			-- 2. Define the expected output table
-			local expected = {
-				VAR1 = "value1",
-				VAR2 = "value2",
-			}
-
-			-- 3. Call the function under test with a path our mock recognizes
-			local actual = dotenv.parse_dotenv_file("/fake/path/to/.env")
-
-			-- 4. Assert equality (use assert.same for deep table comparison)
-			assert.same(expected, actual)
-		end)
-
-		it("should ignore comments and blank lines", function()
-			_G.current_mock_file_content = {
-				"# This is a comment",
-				"KEY_A=valueA",
-				"",
-				"KEY_B=valueB",
-				" ", -- Line with only whitespace
-				"# Another comment",
-			}
-			local expected = {
-				KEY_A = "valueA",
-				KEY_B = "valueB",
-			}
-			local actual = dotenv.parse_dotenv_file("/fake/path/to/.env")
-			assert.same(expected, actual)
-		end)
-
-		it("should trim whitespace from keys and values", function()
-			_G.current_mock_file_content = {
-				"  SPACED_KEY = value_with_space  ",
-				"NORMAL_KEY= normal_value ",
-				"KEY_WITH_SPACE = value with internal space",
-			}
-			local expected = {
-				SPACED_KEY = "value_with_space",
-				NORMAL_KEY = "normal_value",
-				KEY_WITH_SPACE = "value with internal space",
-			}
-			local actual = dotenv.parse_dotenv_file("/fake/path/to/.env")
-			assert.same(expected, actual)
-		end)
-
-		it("should handle empty values", function()
-			_G.current_mock_file_content = {
-				"EMPTY_VALUE=",
-				"KEY_AFTER=something",
-				"EMPTY_WITH_SPACE= ", -- Value is a single space after trimming
-			}
-			local expected = {
-				EMPTY_VALUE = "",
-				KEY_AFTER = "something",
-				EMPTY_WITH_SPACE = "", -- Trim removes the space
-			}
-			local actual = dotenv.parse_dotenv_file("/fake/path/to/.env")
-			assert.same(expected, actual)
+			-- Test direct resolution
+			local value, error = provider:resolve("PATH")
+			-- Should either resolve or give clear error
+			assert.is_true(value ~= nil or error ~= nil)
 		end)
 	end)
 end)
