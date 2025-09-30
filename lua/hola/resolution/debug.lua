@@ -172,6 +172,24 @@ end
 --- Debug provider status command
 --- @param opts table Command options (not used, for compatibility)
 function M.provider_status_command(opts)
+  -- Initialize resolution system if not already done
+  local init_success = pcall(resolution.initialize)
+  if not init_success then
+    M.show_debug_popup("Error: Failed to initialize resolution system.")
+    return
+  end
+
+  -- Attempt to load all provider definitions to get real status
+  local provider_names = resolution.list_providers()
+  for _, provider_name in ipairs(provider_names) do
+    -- Attempt to load each provider (this may trigger auth/connection attempts)
+    local _, error = resolution.load_provider(provider_name)
+    if error then
+      -- Provider failed to load, but that's ok - we'll show the failure in status
+      vim.notify("Provider '" .. provider_name .. "' failed to load: " .. error, vim.log.levels.DEBUG)
+    end
+  end
+
   local status_info = M.get_provider_status()
 
   -- Show provider status in popup modal
