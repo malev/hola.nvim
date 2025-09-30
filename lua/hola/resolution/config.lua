@@ -13,7 +13,6 @@ local DEFAULT_CONFIG = {
       cache_ttl = 300, -- 5 minutes
     },
     vault = {
-      enabled = true,
       timeout_seconds = 10,
       cache_ttl = 300, -- 5 minutes
       auto_authenticate = true,

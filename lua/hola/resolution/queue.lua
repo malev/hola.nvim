@@ -146,8 +146,14 @@ end
 --- @return table|nil provider Provider instance or nil if no provider can handle it
 --- @return string provider_name Name of the provider
 function M.find_provider(variable, provider_registry)
+  -- Check if provider_registry has find_provider_for_variable (lazy loading)
+  if provider_registry.find_provider_for_variable then
+    return provider_registry.find_provider_for_variable(variable)
+  end
+
+  -- Legacy fallback: iterate through loaded providers
   for name, provider in pairs(provider_registry) do
-    if provider and provider:can_handle(variable) then
+    if provider and provider.can_handle and provider:can_handle(variable) then
       return provider, name
     end
   end

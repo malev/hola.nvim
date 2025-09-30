@@ -4,10 +4,13 @@
 
 local M = {}
 
--- Provider registry - stores all available providers
-local provider_registry = {}
+-- Provider definitions - stores provider metadata for lazy loading
+local provider_definitions = {}
 
--- Failed provider registry - stores providers that failed to register
+-- Provider cache - stores initialized provider instances
+local provider_cache = {}
+
+-- Failed provider registry - stores providers that failed to load
 local failed_providers = {}
 
 -- Initialization state
@@ -19,7 +22,50 @@ local queue = require('hola.resolution.queue')
 local audit = require('hola.resolution.audit')
 local feedback = require('hola.resolution.feedback')
 
---- Register a new provider in the system
+--- Register a provider definition for lazy loading
+--- @param name string Provider name (e.g., "env", "vault")
+--- @param module_path string Path to provider module
+--- @param pattern string Pattern that this provider handles (e.g., "^{{vault:.+}}$")
+--- @return boolean success True if registration successful
+--- @return string|nil error Error message if registration failed
+function M.register_provider_definition(name, module_path, pattern)
+  -- Validate input parameters
+  if not name or type(name) ~= "string" or name == "" then
+    return false, "Provider name must be a non-empty string"
+  end
+
+  if not module_path or type(module_path) ~= "string" or module_path == "" then
+    return false, "Module path must be a non-empty string"
+  end
+
+  if not pattern or type(pattern) ~= "string" or pattern == "" then
+    return false, "Pattern must be a non-empty string"
+  end
+
+  -- Check for naming conflicts
+  if provider_definitions[name] then
+    return false, "Provider '" .. name .. "' is already registered"
+  end
+
+  -- Check if provider is enabled in configuration
+  if not config.is_provider_enabled(name) then
+    feedback.show_debug("Provider '" .. name .. "' is disabled in configuration")
+    return false, "Provider '" .. name .. "' is disabled in configuration"
+  end
+
+  -- Register the provider definition
+  provider_definitions[name] = {
+    name = name,
+    module_path = module_path,
+    pattern = pattern,
+    loaded = false
+  }
+
+  feedback.show_debug("Registered provider definition: " .. name)
+  return true, nil
+end
+
+--- Register a new provider in the system (legacy compatibility)
 --- @param name string Provider name (e.g., "env", "vault")
 --- @param provider table Provider instance implementing the required interface
 --- @return boolean success True if registration successful
@@ -35,7 +81,7 @@ function M.register_provider(name, provider)
   end
 
   -- Check for naming conflicts
-  if provider_registry[name] then
+  if provider_cache[name] then
     return false, "Provider '" .. name .. "' is already registered"
   end
 
@@ -57,35 +103,127 @@ function M.register_provider(name, provider)
     return false, "Provider initialization failed: " .. (init_error or "unknown error")
   end
 
-  -- Register the provider
-  provider_registry[name] = provider
+  -- Register the provider in cache
+  provider_cache[name] = provider
 
   feedback.show_debug("Registered provider: " .. name)
   return true, nil
 end
 
---- Get a registered provider by name
+--- Lazy load a provider by name
+--- @param name string Provider name
+--- @return table|nil provider Provider instance or nil if failed to load
+--- @return string|nil error Error message if loading failed
+function M.load_provider(name)
+  -- Check if already loaded
+  if provider_cache[name] then
+    return provider_cache[name], nil
+  end
+
+  -- Check if we have a definition for this provider
+  local definition = provider_definitions[name]
+  if not definition then
+    return nil, "Provider '" .. name .. "' not found"
+  end
+
+  -- Check if provider previously failed to load
+  if failed_providers[name] then
+    return nil, failed_providers[name].error
+  end
+
+  feedback.show_debug("Lazy loading provider: " .. name)
+
+  -- Load the provider module
+  local ok, provider_module = pcall(require, definition.module_path)
+  if not ok or not provider_module or not provider_module.new then
+    local error_msg = "Provider module not available or invalid: " .. definition.module_path
+    failed_providers[name] = {
+      name = name,
+      module_path = definition.module_path,
+      error = error_msg,
+      reason = "module_not_found"
+    }
+    return nil, error_msg
+  end
+
+  -- Create provider instance
+  local provider_instance = provider_module.new()
+
+  -- Use existing register_provider function to validate and initialize
+  local success, error = M.register_provider(name, provider_instance)
+  if not success then
+    failed_providers[name] = {
+      name = name,
+      module_path = definition.module_path,
+      error = error,
+      reason = "registration_failed"
+    }
+    return nil, error
+  end
+
+  -- Mark as loaded
+  definition.loaded = true
+  return provider_cache[name], nil
+end
+
+--- Get a registered provider by name (with lazy loading)
 --- @param name string Provider name
 --- @return table|nil provider Provider instance or nil if not found
 function M.get_provider(name)
-  return provider_registry[name]
+  local provider, _ = M.load_provider(name)
+  return provider
 end
 
---- Get list of all registered provider names
+--- Get list of all registered provider names (including definitions)
 --- @return table provider_names Array of provider names
 function M.list_providers()
   local names = {}
-  for name, _ in pairs(provider_registry) do
+  -- Include loaded providers
+  for name, _ in pairs(provider_cache) do
     table.insert(names, name)
   end
+  -- Include defined but not loaded providers
+  for name, _ in pairs(provider_definitions) do
+    if not provider_cache[name] then
+      table.insert(names, name)
+    end
+  end
   return names
+end
+
+--- Find provider by variable pattern (with lazy loading)
+--- @param variable string Variable like "{{vault:path#field}}"
+--- @return table|nil provider Provider instance or nil if not found
+--- @return string|nil provider_name Name of the provider that can handle this variable
+function M.find_provider_for_variable(variable)
+  -- First check loaded providers
+  for name, provider in pairs(provider_cache) do
+    if provider and provider:can_handle(variable) then
+      return provider, name
+    end
+  end
+
+  -- Check unloaded provider definitions by pattern
+  for name, definition in pairs(provider_definitions) do
+    if not definition.loaded and variable:match(definition.pattern) then
+      -- Lazy load this provider
+      local provider, error = M.load_provider(name)
+      if provider then
+        return provider, name
+      else
+        feedback.show_debug("Failed to lazy load provider '" .. name .. "': " .. (error or "unknown error"))
+      end
+    end
+  end
+
+  return nil, nil
 end
 
 --- Check if a provider is available and ready
 --- @param name string Provider name
 --- @return boolean available True if provider is available and authenticated
 function M.is_provider_available(name)
-  local provider = provider_registry[name]
+  local provider = provider_cache[name]
   if not provider then
     return false
   end
@@ -116,7 +254,7 @@ end
 --- @return string compiled_text The text with variables resolved
 --- @return table errors Array of resolution errors
 function M.resolve_variables(text, traditional_sources)
-  return queue.resolve_all_variables(text, traditional_sources or {}, provider_registry)
+  return queue.resolve_all_variables(text, traditional_sources or {}, M)
 end
 
 --- Debug variable resolution for current request
@@ -124,7 +262,7 @@ end
 --- @param request_text string The HTTP request text to analyze
 --- @return string debug_output Formatted debug information
 function M.debug_request_variables(request_text)
-  local compiled_text, errors, audit_trail = queue.resolve_all_variables(request_text, {}, provider_registry)
+  local compiled_text, errors, audit_trail = queue.resolve_all_variables(request_text, {}, M)
 
   -- Extract request info for better debug output
   local request_info = {
@@ -166,47 +304,25 @@ function M.initialize()
 
   feedback.show_debug("Configuration loaded successfully")
 
-  -- Register built-in providers
-  local providers_to_register = {
-    { name = "env", module = "hola.resolution.providers.env" },
-    { name = "oauth", module = "hola.resolution.providers.oauth" },
-    { name = "vault", module = "hola.resolution.providers.vault" },
-    { name = "refs", module = "hola.resolution.providers.refs" }
+  -- Register provider definitions for lazy loading
+  local provider_definitions_to_register = {
+    { name = "env", module = "hola.resolution.providers.env", pattern = "^{{env:.+}}$" },
+    { name = "oauth", module = "hola.resolution.providers.oauth", pattern = "^{{oauth:.+}}$" },
+    { name = "vault", module = "hola.resolution.providers.vault", pattern = "^{{vault:.+}}$" },
+    { name = "refs", module = "hola.resolution.providers.refs", pattern = "^{{refs:.+}}$" }
   }
 
   local registered_count = 0
-  for _, provider_info in ipairs(providers_to_register) do
-    local ok, provider_module = pcall(require, provider_info.module)
-    if ok and provider_module and provider_module.new then
-      local provider_instance = provider_module.new()
-      local success, error = M.register_provider(provider_info.name, provider_instance)
-
-      if success then
-        registered_count = registered_count + 1
-        feedback.show_debug("Registered provider: " .. provider_info.name)
-      else
-        -- Track failed registration
-        failed_providers[provider_info.name] = {
-          name = provider_info.name,
-          module = provider_info.module,
-          error = error or "unknown error",
-          reason = "registration_failed"
-        }
-        feedback.show_warning("Failed to register provider '" .. provider_info.name .. "': " .. (error or "unknown error"))
-      end
+  for _, provider_info in ipairs(provider_definitions_to_register) do
+    local success, error = M.register_provider_definition(provider_info.name, provider_info.module, provider_info.pattern)
+    if success then
+      registered_count = registered_count + 1
     else
-      -- Track module loading failure
-      failed_providers[provider_info.name] = {
-        name = provider_info.name,
-        module = provider_info.module,
-        error = "Provider module not available or invalid",
-        reason = "module_not_found"
-      }
-      feedback.show_debug("Provider module not available: " .. provider_info.module)
+      feedback.show_debug("Failed to register provider definition '" .. provider_info.name .. "': " .. (error or "unknown error"))
     end
   end
 
-  feedback.show_debug("Resolution system initialized with " .. registered_count .. " providers")
+  feedback.show_debug("Resolution system initialized with " .. registered_count .. " provider definitions")
   initialized = true
   return true
 end
@@ -215,7 +331,7 @@ end
 --- @param name string Provider name to unregister
 --- @return boolean success True if unregistration successful
 function M.unregister_provider(name)
-  local provider = provider_registry[name]
+  local provider = provider_cache[name]
   if not provider then
     return false
   end
@@ -225,7 +341,13 @@ function M.unregister_provider(name)
     provider:cleanup()
   end
 
-  provider_registry[name] = nil
+  provider_cache[name] = nil
+
+  -- Mark definition as not loaded if it exists
+  if provider_definitions[name] then
+    provider_definitions[name].loaded = false
+  end
+
   feedback.show_debug("Unregistered provider: " .. name)
   return true
 end
@@ -235,8 +357,8 @@ end
 function M.get_provider_info()
   local info = {}
 
-  -- Add successfully registered providers
-  for name, provider in pairs(provider_registry) do
+  -- Add loaded providers
+  for name, provider in pairs(provider_cache) do
     local metadata = provider:get_metadata()
     local available = M.is_provider_available(name)
 
@@ -251,6 +373,23 @@ function M.get_provider_info()
       config_files = metadata.config_files,
       status = "registered"
     })
+  end
+
+  -- Add defined but not loaded providers
+  for name, definition in pairs(provider_definitions) do
+    if not provider_cache[name] then
+      table.insert(info, {
+        name = name,
+        description = "Available (not loaded)",
+        enabled = config.is_provider_enabled(name),
+        available = false,
+        initialized = false,
+        authenticated = false,
+        requires_network = false,
+        config_files = {},
+        status = "defined"
+      })
+    end
   end
 
   -- Add failed providers

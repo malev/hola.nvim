@@ -45,6 +45,13 @@ Accept: application/json
 GET https://echo-http-requests.appspot.com/push/{{env:VERSION}}
 
 ### =============================================================================
+### Vault
+### =============================================================================
+
+### Test env var
+GET https://echo-http-requests.appspot.com/push/{{vault:secrets/malev.xyz#api_key}}
+
+### =============================================================================
 ### OAuth 2.0 Testing (use with scripts/server.py and .env.oauth-test)
 ### =============================================================================
 

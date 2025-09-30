@@ -21,9 +21,8 @@ function M.show_status(message, provider_name)
     provider = provider_name
   }
 
-  -- Use virtual text or notify based on context
-  -- For now, use vim.notify with INFO level
-  vim.notify(message, vim.log.levels.INFO, {
+  -- Use DEBUG level to avoid disrupting normal workflow
+  vim.notify(message, vim.log.levels.DEBUG, {
     title = "Resolution Status",
     timeout = false, -- Don't auto-dismiss
   })

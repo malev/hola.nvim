@@ -4,9 +4,5 @@ vim.cmd("set rtp+=deps/plenary.nvim")
 
 vim.cmd("source plugin/hola.lua")
 
--- Enable vault for development/testing
-require("hola").setup({
-	vault = {
-		enabled = true
-	}
-})
+-- Setup hola.nvim for development/testing
+require("hola").setup({})
