@@ -186,13 +186,6 @@ function M.setup_commands()
   end, {
     desc = 'Debug variable resolution for the current HTTP request'
   })
-
-  -- Provider status command
-  vim.api.nvim_create_user_command('HolaProviders', function(opts)
-    M.provider_status_command(opts)
-  end, {
-    desc = 'Show status of all registered providers'
-  })
 end
 
 return M
