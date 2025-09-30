@@ -254,6 +254,14 @@ end
 --- @return string compiled_text The text with variables resolved
 --- @return table errors Array of resolution errors
 function M.resolve_variables(text, traditional_sources)
+  -- Ensure resolution system is initialized
+  if not initialized then
+    local init_success = M.initialize()
+    if not init_success then
+      return text, { { variable = "system", error = "resolution_init_failed", details = "Failed to initialize resolution system" } }
+    end
+  end
+
   return queue.resolve_all_variables(text, traditional_sources or {}, M)
 end
 
