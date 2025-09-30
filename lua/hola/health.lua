@@ -17,17 +17,8 @@ end
 --- Check vault health using the vault_health module
 local function check_vault_health()
 	local vault_health = require("hola.vault_health")
-	local config = require("hola.config")
 
 	vim.health.start("hola vault integration")
-
-	-- Check if vault is enabled in config
-	local vault_config = config.get_vault()
-	if not vault_config.enabled then
-		info("Vault integration disabled in configuration")
-		info("Enable with: require('hola').setup({vault = {enabled = true}})")
-		return
-	end
 
 	-- Run vault health checks
 	local checks = vault_health.check_vault()

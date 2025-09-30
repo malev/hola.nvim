@@ -32,19 +32,6 @@ end, {
 })
 
 
-vim.api.nvim_create_user_command("HolaEnableVault", function()
-	require("hola").enable_vault()
-end, {
-	nargs = "*",
-	desc = "Enable vault integration for current session",
-})
-
-vim.api.nvim_create_user_command("HolaDisableVault", function()
-	require("hola").disable_vault()
-end, {
-	nargs = "*",
-	desc = "Disable vault integration for current session",
-})
 
 
 -- Debug commands for the new resolution system
