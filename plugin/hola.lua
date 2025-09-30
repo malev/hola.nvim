@@ -52,26 +52,6 @@ end, {
 	desc = "Disable vault integration for current session",
 })
 
-vim.api.nvim_create_user_command("HolaCloseWindow", function()
-	vim.print("Deprecated. Try :HolaToggle instead.", vim.log.levels.WARN)
-end, {
-	nargs = "*",
-	desc = "Close window",
-})
-
-vim.api.nvim_create_user_command("HolaShowWindow", function()
-	vim.print("Deprecated. Try :HolaToggle instead.", vim.log.levels.WARN)
-end, {
-	nargs = "*",
-	desc = "Show window",
-})
-
-vim.api.nvim_create_user_command("HolaMaximizeWindow", function()
-	vim.print("Deprecated. Try :HolaToggle instead.", vim.log.levels.WARN)
-end, {
-	nargs = "*",
-	desc = "Maximize window",
-})
 
 -- Debug commands for the new resolution system
 vim.api.nvim_create_user_command("HolaDebug", function(opts)

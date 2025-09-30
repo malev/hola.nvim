@@ -352,35 +352,6 @@ local function has_body(state)
 	return state["response"]["body"] ~= nil
 end
 
-local function shorten_string(input_string, max_length)
-	max_length = max_length or 25 -- Default max length if not provided
-
-	if #input_string > max_length then
-		return string.sub(input_string, 1, max_length) .. "..."
-	else
-		return input_string
-	end
-end
-
-local function build_metadata_content(state, maximize)
-	local data = {
-		"Status: " .. state.response.status,
-		"Time: " .. state.response.elapsed .. "ms",
-		"Headers:",
-	}
-
-	if maximize then
-		for k, v in pairs(state.response.parsed_headers) do
-			table.insert(data, "> " .. k .. ": " .. v)
-		end
-	else
-		for k, v in pairs(state.response.parsed_headers) do
-			table.insert(data, "> " .. k .. ": " .. shorten_string(v))
-		end
-	end
-
-	return data
-end
 
 function M.create_window(opts, cb)
 	local height = 20
@@ -443,29 +414,6 @@ function M.hide(state)
 	state.ui.visible = false
 end
 
-function M.close_window(state)
-	if state["metadata"] ~= nil and type(state["metadata"]) == "table" then
-		vim.api.nvim_win_close(state["metadata"].win, true)
-		state["metadata"] = nil
-	end
-end
-
-function M.show_window(state)
-	if state["metadata"] ~= nil and type(state["metadata"]) == "table" then
-		-- TODO: Validate the windows is still open
-		return
-	end
-	M.show_metadata(state)
-end
-
-function M.maximize_window(state)
-	M.close_window(state)
-
-	local bufnr = vim.api.nvim_create_buf(false, true) -- false: not listed, true: scratch buffer
-	vim.api.nvim_set_current_buf(bufnr)
-	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, build_metadata_content(state, true))
-	return bufnr
-end
 
 --- Clears the content of the buffer associated with the given feedback information.
 ---
