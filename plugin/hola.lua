@@ -31,12 +31,6 @@ end, {
 	desc = "Toggle JSON formatting between formatted and raw views",
 })
 
-vim.api.nvim_create_user_command("HolaVaultStatus", function()
-	require("hola").show_vault_status()
-end, {
-	nargs = "*",
-	desc = "Show vault health status and configuration",
-})
 
 vim.api.nvim_create_user_command("HolaEnableVault", function()
 	require("hola").enable_vault()

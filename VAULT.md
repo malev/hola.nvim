@@ -49,17 +49,16 @@ X-DB-Pass: {{vault:secret/database#password}}
 
 hola.nvim provides several commands for managing Vault integration:
 
-### `:HolaVaultStatus`
-Check the current status of your Vault integration:
+### `:HolaProviders`
+Check the current status of your Vault integration along with other providers:
 ```
-:HolaVaultStatus
+:HolaProviders
 ```
 
 Shows:
-- Vault CLI availability and version
-- Authentication status
-- Connection to Vault server
-- Any configuration issues
+- Status of all registered providers (including vault)
+- Provider initialization success/failure
+- Error messages for failed providers
 
 ## Usage with Other Providers
 
@@ -155,9 +154,9 @@ To get detailed information about your Vault setup:
    vault kv get secret/your/path
    ```
 
-3. **Check hola.nvim vault status**:
+3. **Check hola.nvim provider status**:
    ```
-   :HolaVaultStatus
+   :HolaProviders
    ```
 
 4. **Enable detailed logging** (if needed):
@@ -170,7 +169,7 @@ To get detailed information about your Vault setup:
 If you encounter issues with Vault integration:
 
 1. Check this troubleshooting guide
-2. Run `:HolaVaultStatus` for diagnostic information
+2. Run `:HolaProviders` for diagnostic information
 3. Verify your Vault CLI configuration
 4. Check the [hola.nvim repository](https://github.com/malev/hola.nvim) for known issues
 

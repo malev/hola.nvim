@@ -100,10 +100,6 @@ function M.run_request_under_cursor()
 end
 
 
---- Show vault health status
-function M.show_vault_status()
-	vault_health.show_vault_status()
-end
 
 --- Enable vault integration mid-session
 function M.enable_vault()

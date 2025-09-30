@@ -157,42 +157,5 @@ function vault_health.check_vault()
   return checks
 end
 
--- Show health check results in a nice format
-function vault_health.show_vault_status()
-  local checks = vault_health.check_vault()
-
-  print("=== Hola.nvim Vault Health Check ===")
-  print("")
-
-  for _, check in ipairs(checks) do
-    local result = check.result
-    local icon = result.level == LEVELS.OK and "✓" or
-                 result.level == LEVELS.WARN and "⚠" or "ℹ"
-
-    print(string.format("%s %s: %s", icon, check.name, result.message))
-
-    if result.suggestion then
-      print("  → " .. result.suggestion)
-    end
-  end
-
-  print("")
-
-  -- Summary
-  local has_warnings = false
-  for _, check in ipairs(checks) do
-    if check.result.level == LEVELS.WARN then
-      has_warnings = true
-      break
-    end
-  end
-
-  if has_warnings then
-    print("Note: Warnings don't prevent using hola.nvim - vault features will be disabled")
-    print("Run the suggested commands above if you want to use vault secrets")
-  else
-    print("All checks passed! Vault integration is ready to use.")
-  end
-end
 
 return vault_health
