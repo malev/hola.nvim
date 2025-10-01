@@ -1,3 +1,10 @@
+# Reference aliases for common variables
+# Maps simple names to provider references
+
+# Commonly used in examples.http
+COMMON_TOKEN={{env:API_TOKEN}}
+COMMON_HEADER={{env:REQUEST_ID}}
+
 # API credentials
 USERNAME={{vault:secrets/malev.xyz#username}}
 API_KEY={{vault:secret/app#api_key}}

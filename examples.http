@@ -1,119 +1,114 @@
-### GET hello world
+### =============================================================================
+### Basic HTTP Requests
+### =============================================================================
+
+### Simple GET request
 GET http://localhost:8000/hello
 Accept: application/json
 
-### GET slog endpoint
+### GET with slow response (test timeout handling)
 GET http://localhost:8000/slow
 Accept: application/json
 
-### POST basic auth endpoint (valid credentials)
+### POST with JSON body
+POST http://localhost:8000/echo
+Content-Type: application/json
+
+{
+  "message": "Hello from hola.nvim!",
+  "timestamp": "2025-01-01T00:00:00Z"
+}
+
+### =============================================================================
+### Authentication Methods
+### =============================================================================
+
+### Basic Authentication (auto-encoded)
 POST http://localhost:8000/secure
 Authorization: Basic admin:secret
 Accept: application/json
 
-### POST auth endpoint (valid incredentials)
-POST http://localhost:8000/secure
-Authorization: Basic admin:wrong-password
-Accept: application/json
-
-### GET auth bearer token (valid token)
+### Bearer Token Authentication
 GET http://localhost:8000/bearer
 Authorization: Bearer abc123-def456-ghi789
 Accept: application/json
 
-### GET auth bearer token (vivalid token)
-GET http://localhost:8000/bearer
-Authorization: Bearer abc123-wrong-token
-Accept: application/json
-
-### GET auth API key (valid key)
+### API Key Authentication (Authorization header)
 GET http://localhost:8000/apikey
 Authorization: ApiKey secret-api-key-123
 Accept: application/json
 
-### GET auth API key (invalid key)
-GET http://localhost:8000/apikey
-Authorization: ApiKey wrong-api-key
-Accept: application/json
-
-### GET auth with X-API-Key header
+### API Key Authentication (X-API-Key header)
 GET http://localhost:8000/apikey
 X-API-Key: secret-api-key-123
 Accept: application/json
 
-### Test env var
-GET https://echo-http-requests.appspot.com/push/{{env:VERSION}}
-
 ### =============================================================================
-### Vault
+### Environment Variables (env provider)
+### Requires .env file or system environment variables
 ### =============================================================================
 
-### Test env var
-GET https://echo-http-requests.appspot.com/push/{{vault:secrets/malev.xyz#api_key}}
+### Using environment variables in headers
+GET http://localhost:8000/bearer
+Authorization: Bearer {{env:API_TOKEN}}
+X-Request-ID: {{env:REQUEST_ID}}
+X-Environment: {{env:ENVIRONMENT}}
+Accept: application/json
 
 ### =============================================================================
-### OAuth 2.0 Testing (use with scripts/server.py and .env.oauth-test)
+### HashiCorp Vault Integration (vault provider)
+### Requires vault CLI and authentication
 ### =============================================================================
 
-### OAuth Test - Generic Provider (Default Environment)
-GET http://localhost:8000/oauth-test
-Authorization: {{oauth:local_server}}
+### Fetch secret from Vault and use in API request
+GET http://localhost:8000/apikey
+Authorization: ApiKey {{vault:secret/api#key}}
 Accept: application/json
 
-### OAuth Test - AWS Cognito Style
+### =============================================================================
+### OAuth 2.0 Client Credentials Flow (oauth provider)
+### Requires oauth.toml configuration file
+### Use with scripts/server.py for local testing
+### =============================================================================
+
+### OAuth with default provider
 GET http://localhost:8000/oauth-test
-Authorization: {{oauth:cognito_local}}
+Authorization: Bearer {{oauth:local_server}}
 Accept: application/json
 
-### OAuth Test - Auth0 Style
+### OAuth with named provider (Auth0 style)
 GET http://localhost:8000/oauth-test
-Authorization: {{oauth:auth0_local}}
+Authorization: Bearer {{oauth:auth0_local}}
 Accept: application/json
 
-### OAuth Test - Apigee Style
+### OAuth with named provider (AWS Cognito style)
 GET http://localhost:8000/oauth-test
-Authorization: Bearer {{OAUTH_TOKEN_APIGEE}}
+Authorization: Bearer {{oauth:cognito_local}}
 Accept: application/json
 
-### OAuth Test - Multi-Environment (Staging)
-GET http://localhost:8000/oauth-test
-Authorization: Bearer {{OAUTH_TOKEN_STAGING}}
+### =============================================================================
+### Reference Aliases (refs provider)
+### Requires refs file mapping aliases to provider references
+### =============================================================================
+
+### Using reference alias (COMMON_TOKEN -> env:API_TOKEN)
+GET http://localhost:8000/bearer
+Authorization: Bearer {{refs:COMMON_TOKEN}}
 Accept: application/json
 
-### OAuth Test - Multi-Environment (Dev)
-GET http://localhost:8000/oauth-test
-Authorization: Bearer {{OAUTH_TOKEN_DEV}}
-Accept: application/json
+### =============================================================================
+### Mixed Provider Usage
+### =============================================================================
 
-### OAuth Mixed with Traditional Variables
+### Combining multiple providers in one request
 POST http://localhost:8000/echo
-Authorization: Bearer {{OAUTH_TOKEN}}
-X-API-Key: {{API_KEY}}
-X-User-Email: {{USER_EMAIL}}
+Authorization: Bearer {{oauth:local_server}}
+X-API-Key: {{env:API_KEY}}
+X-Request-ID: {{refs:COMMON_HEADER}}
 Content-Type: application/json
 
 {
-  "message": "Testing OAuth with traditional variables",
-  "api_key": "{{API_KEY}}",
-  "oauth_env": "default"
+  "environment": "{{env:ENVIRONMENT}}",
+  "version": "{{env:VERSION}}",
+  "message": "Multi-provider example - OAuth + env + refs"
 }
-
-### OAuth Token in Request Body (GraphQL Example)
-POST http://localhost:8000/echo
-Content-Type: application/json
-
-{
-  "query": "{ user { name email } }",
-  "variables": {},
-  "extensions": {
-    "authorization": "{{OAUTH_TOKEN_COGNITO}}"
-  }
-}
-
-### OAuth Custom Headers
-GET http://localhost:8000/oauth-test
-Authorization: Bearer {{OAUTH_TOKEN_AUTH0}}
-X-OAuth-Provider: auth0
-X-Environment: production
-Accept: application/json
-
