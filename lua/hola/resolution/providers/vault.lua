@@ -99,7 +99,6 @@ function VaultProvider:load_config()
 
 	-- Set defaults and validate configuration
 	self._config = {
-		cache_ttl = provider_config.cache_ttl or 300, -- 5 minutes default
 		timeout_seconds = provider_config.timeout_seconds or 10, -- 10 seconds default
 		auto_authenticate = provider_config.auto_authenticate ~= false, -- Default true
 		debug = provider_config.debug == true, -- Default false
