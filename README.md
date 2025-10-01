@@ -103,14 +103,54 @@ JSON responses are automatically formatted with:
 
 ### ⚙️ **Configuration**
 
-Customize JSON behavior in your Neovim config:
+`hola.nvim` can be customized through the `setup()` function. Below is the complete configuration structure with all available options and their default values:
 
 ```lua
 require("hola").setup({
+  -- All values below are defaults and can be omitted
   json = {
-    auto_format = true,        -- Auto-format JSON responses
+    auto_format = true,  -- Automatically format JSON responses
+  },
+  ui = {
+    auto_focus_response = false,           -- Auto-focus response window after request
+    response_window_position = "right",    -- Position: "right", "left", "above", "below"
+  },
+  log = {
+    level = "WARN",  -- Log level: "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "OFF"
+    -- Logs written to: vim.fn.stdpath("log") .. "/hola.log"
   },
 })
+```
+
+**Advanced Provider Configuration**
+
+For advanced control over the resolution system, create a `.hola/resolution.lua` file in your project root, git root, or `~/.config/hola/`:
+
+```lua
+-- All values below are defaults and can be omitted
+return {
+  providers = {
+    env = {
+      enabled = true,                              -- Enable environment variable provider
+      search_paths = { ".", "..", "~/.config/hola" },  -- Paths to search for .env files
+      cache_ttl = 300,                             -- Cache TTL in seconds (5 minutes)
+    },
+    vault = {
+      timeout_seconds = 10,       -- Vault command timeout in seconds
+      auto_authenticate = true,   -- Automatically authenticate with Vault
+    },
+  },
+  debug = {
+    enabled = false,           -- Enable debug mode for resolution system
+    max_audit_entries = 100,   -- Maximum number of audit log entries
+    redact_sensitive = true,   -- Automatically redact sensitive data in logs
+  },
+  resolution = {
+    max_depth = 10,               -- Maximum depth for nested variable resolution
+    timeout_ms = 30000,           -- Resolution timeout in milliseconds (30 seconds)
+    circular_detection = true,    -- Detect and prevent circular references
+  },
+}
 ```
 
 ## Configuration Management 🔧
