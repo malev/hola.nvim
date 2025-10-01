@@ -14,7 +14,6 @@ local DEFAULT_CONFIG = {
 		},
 		vault = {
 			timeout_seconds = 10,
-			cache_ttl = 300, -- 5 minutes
 			auto_authenticate = true,
 		},
 	},
@@ -92,35 +91,6 @@ local function merge_config(base, override)
 	return result
 end
 
---- Load configuration from environment variables
---- @return table Environment-based configuration
-local function load_env_config()
-	local env_config = {
-		providers = {},
-		debug = {},
-		resolution = {},
-	}
-
-	-- Check for provider-specific environment variables
-	if os.getenv("HOLA_ENV_ENABLED") then
-		env_config.providers.env = env_config.providers.env or {}
-		env_config.providers.env.enabled = os.getenv("HOLA_ENV_ENABLED") == "true"
-	end
-
-	if os.getenv("HOLA_DEBUG_ENABLED") then
-		env_config.debug.enabled = os.getenv("HOLA_DEBUG_ENABLED") == "true"
-	end
-
-	if os.getenv("HOLA_MAX_DEPTH") then
-		local max_depth = tonumber(os.getenv("HOLA_MAX_DEPTH"))
-		if max_depth then
-			env_config.resolution.max_depth = max_depth
-		end
-	end
-
-	return env_config
-end
-
 --- Get configuration file search paths
 --- @return table Array of file paths to search for configuration
 local function get_config_search_paths()
@@ -160,10 +130,6 @@ function M.load()
 			break -- Use first found config file
 		end
 	end
-
-	-- Override with environment variables
-	local env_config = load_env_config()
-	config = merge_config(config, env_config)
 
 	cached_config = config
 	return config
