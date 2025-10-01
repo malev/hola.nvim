@@ -299,12 +299,58 @@ OAuth tokens are automatically obtained, cached, and refreshed as needed. Config
 
 Want to contribute to `hola.nvim`? Awesome! Here's how to get started:
 
-*Note: If you are using nix and home-manager, try to use the native, unwrapped `nvim` binary for development.*
+### Setup
 
-1.  Clone this repo: `git clone https://github.com/malev/hola.nvim`
-2.  Open Neovim in the project root: `nvim -u scripts/init.lua examples.http`
-3.  Run the tests: `make test` (Let's make sure everything is saying "¡Hola!" correctly!)
-4.  Run `python scripts/server.py` to have a server for testing
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/malev/hola.nvim
+   cd hola.nvim
+   ```
+
+2. **Set up environment variables:**
+   ```bash
+   cp .env.example .env
+   ```
+   The `.env` file contains test values that work with `examples.http`. Adjust if needed.
+
+3. **Start the test server:**
+   ```bash
+   python scripts/server.py
+   ```
+   This provides local endpoints for testing OAuth, authentication, and variable resolution.
+
+4. **Open Neovim with the plugin:**
+   ```bash
+   nvim -u scripts/init.lua examples.http
+   ```
+   This loads the plugin in a minimal environment. Place your cursor on any request and run `:HolaSend`.
+
+### Running Tests
+
+Run the test suite using plenary.nvim:
+
+```bash
+nvim --headless -u scripts/init.lua \
+  -c "PlenaryBustedDirectory tests/ {minimal_init = 'scripts/init.lua'}" \
+  -c "qa"
+```
+
+### Project Structure
+
+- `lua/hola/` - Core plugin code
+- `lua/hola/resolution/` - Provider system for variable resolution
+- `tests/` - Test suite using plenary.nvim
+- `examples.http` - Example requests showcasing features
+- `.env.example` - Template for environment variables
+- `oauth.toml` - OAuth provider configurations
+- `refs` - Reference aliases for variables
+
+### Development Notes
+
+- If using nix and home-manager, use the native, unwrapped `nvim` binary
+- All examples in `examples.http` work with the test server
+- Provider system supports: env variables, Vault secrets, OAuth tokens, and reference aliases
+- Tests should pass before submitting PRs
 
 We welcome pull requests and appreciate your contributions! 🙏
 
