@@ -1,26 +1,28 @@
 local M = {}
 
---- Default configuration for hola.nvim
 local DEFAULT_CONFIG = {
-	-- JSON formatting options
 	json = {
-		auto_format = true, -- Automatically format JSON responses
+		auto_format = true,
 	},
-	-- UI options
 	ui = {
-		auto_focus_response = false, -- Focus response window after request
-		response_window_position = "right", -- Position of response window
+		auto_focus_response = false,
+		response_window_position = "right",
+	},
+	log = {
+		level = "WARN",
 	},
 }
 
---- Current user configuration
 local user_config = vim.deepcopy(DEFAULT_CONFIG)
 
---- Setup function to configure hola.nvim
--- @param opts (table|nil) User configuration options
 function M.setup(opts)
 	if opts then
 		user_config = vim.tbl_deep_extend("force", user_config, opts)
+	end
+
+	if opts and opts.log and opts.log.level then
+		local log = require("hola.log")
+		log.set_level(user_config.log.level)
 	end
 end
 
@@ -36,16 +38,24 @@ function M.get_json()
 	return user_config.json
 end
 
---- Get UI-specific configuration
--- @return (table) UI configuration options
 function M.get_ui()
 	return user_config.ui
 end
 
---- Update JSON configuration
--- @param json_opts (table) JSON configuration to merge
+function M.get_log()
+	return user_config.log
+end
+
 function M.update_json(json_opts)
 	user_config.json = vim.tbl_deep_extend("force", user_config.json, json_opts)
+end
+
+function M.update_log(log_opts)
+	if log_opts.level then
+		user_config.log.level = log_opts.level
+		local log = require("hola.log")
+		log.set_level(log_opts.level)
+	end
 end
 
 --- Reset configuration to defaults

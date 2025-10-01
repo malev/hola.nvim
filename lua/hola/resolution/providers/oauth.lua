@@ -5,6 +5,7 @@
 local BaseProvider = require("hola.resolution.base_provider")
 local config = require("hola.resolution.config")
 local oauth = require("hola.oauth")
+local log = require("hola.log")
 
 local OAuthProvider = setmetatable({}, { __index = BaseProvider })
 OAuthProvider.__index = OAuthProvider
@@ -236,9 +237,9 @@ function OAuthProvider:resolve(identifier)
 		self:_load_toml()
 	end
 
-	-- Check if service is configured
 	local service_config = self._toml_data[service_name]
 	if not service_config then
+		log.error("OAuth service '" .. service_name .. "' not found in oauth.toml")
 		return nil, "OAuth service '" .. service_name .. "' not found in oauth.toml"
 	end
 
@@ -253,12 +254,10 @@ function OAuthProvider:resolve(identifier)
 	-- Convert TOML config to environment variable format expected by oauth.lua
 	local env_source = toml_to_oauth_env_source(service_config)
 
-	-- Use existing oauth.lua to get token
-	-- Pass 'default' as env_suffix and our mapped config as env_sources
+	log.debug("Requesting OAuth token for service:", service_name)
 	local token, oauth_error = oauth.get_token("default", { env_source })
 
 	if not token then
-		-- Categorize OAuth errors using standardized error types
 		local error_type = "auth_failure"
 		if oauth_error and oauth_error:find("timeout") then
 			error_type = "network_timeout"
@@ -266,10 +265,11 @@ function OAuthProvider:resolve(identifier)
 			error_type = "config_missing"
 		end
 
+		log.error("OAuth token request failed for service '" .. service_name .. "':", error_type, "-", oauth_error)
 		return nil, error_type .. ": " .. (oauth_error or "Unknown OAuth error")
 	end
 
-	-- Return raw token - let users format it as needed in their requests
+	log.info("Resolved {{" .. identifier .. "}} -> OAuth token (redacted)")
 	return token, nil
 end
 

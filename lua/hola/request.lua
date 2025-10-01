@@ -1,5 +1,6 @@
 local curl = require("plenary.curl")
 local utils = require("hola.utils")
+local log = require("hola.log")
 
 local M = {}
 
@@ -25,21 +26,28 @@ local M = {}
 function M.execute(options, on_complete)
 	if type(on_complete) ~= "function" then
 		vim.notify("Invalid callback", vim.log.levels.ERROR)
+		log.error("Invalid callback provided to request.execute")
 		return
+	end
+
+	log.info("Sending request:", options.method:upper(), options.path)
+	log.trace("Request headers:", options.headers)
+	if options.body then
+		log.debug("Request body length:", #options.body, "bytes")
 	end
 
 	local start_time = vim.uv.now()
 	local curl_options = {
 		url = options.path,
-		method = options.method:upper(), -- Ensure method is uppercase for curl
+		method = options.method:upper(),
 		headers = options.headers,
 		body = options.body,
-		timeout = options.timeout or 10000, -- 10 seconds
+		timeout = options.timeout or 10000,
 		callback = function(response)
 			local end_time = vim.uv.now()
 			response.elapsed_ms = end_time - start_time
+
 			if response.exit ~= 0 or response.signal ~= nil then
-				-- response.signal ~= 0 or response.status == nil or response.status == 0 then
 				local err_msg = "Request failed (exit="
 					.. tostring(response.exit)
 					.. ", signal="
@@ -51,20 +59,44 @@ function M.execute(options, on_complete)
 				if response.exit == 28 then
 					err_msg = "Request Timed Out"
 				end
-				-- Request failure is already handled by error field
-				response.error = err_msg -- Add error field
-				-- Call the final callback passed to M.execute
+
+				log.error(
+					"Request failed:",
+					options.method:upper(),
+					options.path,
+					"-",
+					err_msg,
+					"(",
+					response.elapsed_ms,
+					"ms)"
+				)
+
+				response.error = err_msg
 				vim.schedule(function()
 					on_complete(response)
 				end)
-				return -- Don't proceed with post-processing
+				return
 			end
-			-- Post-processing successful response (Sync operations)
+
 			local processed_response = response
 			utils.parse_headers(processed_response)
 			utils.detect_filetype(processed_response)
 
-			-- Call the final callback passed to M.execute
+			local body_size = processed_response.body and #processed_response.body or 0
+			log.info(
+				"Response received:",
+				processed_response.status or "N/A",
+				"-",
+				options.method:upper(),
+				options.path,
+				"(",
+				response.elapsed_ms,
+				"ms,",
+				body_size,
+				"bytes)"
+			)
+			log.trace("Response headers:", processed_response.parsed_headers)
+
 			vim.schedule(function()
 				on_complete(processed_response)
 			end)
@@ -73,11 +105,10 @@ function M.execute(options, on_complete)
 	local job_id = curl.request(curl_options)
 
 	if not job_id then
+		log.error("Failed to start HTTP request:", options.method:upper(), options.path)
 		vim.notify("Failed to start HTTP request", vim.log.levels.ERROR)
-		-- Immediately call back with an error if job didn't even start
 		on_complete({ error = "Failed to initiate curl request job." })
 	end
-	-- M.execute returns now, the callback runs later
 end
 
 return M
