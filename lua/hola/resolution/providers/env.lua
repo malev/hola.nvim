@@ -4,6 +4,7 @@
 
 local BaseProvider = require("hola.resolution.base_provider")
 local config = require("hola.resolution.config")
+local log = require("hola.log")
 
 local EnvProvider = setmetatable({}, { __index = BaseProvider })
 EnvProvider.__index = EnvProvider
@@ -98,7 +99,7 @@ function EnvProvider:_load_dotenv()
 	local dotenv_path = find_dotenv_file()
 
 	if not dotenv_path then
-		-- No .env file found, that's okay
+		log.debug("No .env file found in current directory")
 		self._dotenv_data = {}
 		self._dotenv_loaded = true
 		self._dotenv_file_path = nil
@@ -106,25 +107,26 @@ function EnvProvider:_load_dotenv()
 		return true
 	end
 
-	-- Check if we need to reload the file
 	local stat = vim.loop.fs_stat(dotenv_path)
 	if not stat then
+		log.warn("Failed to stat .env file:", dotenv_path)
 		return false
 	end
 
 	local current_mtime = stat.mtime.sec
 
 	if self._dotenv_loaded and self._dotenv_file_path == dotenv_path and self._dotenv_file_mtime == current_mtime then
-		-- File hasn't changed, use cached data
+		log.trace(".env file unchanged, using cached data")
 		return true
 	end
 
-	-- Load/reload the file
 	local env_vars = parse_dotenv_file(dotenv_path)
 	if not env_vars then
+		log.error("Failed to parse .env file:", dotenv_path)
 		return false
 	end
 
+	log.info("Loaded .env file:", dotenv_path, "with", vim.tbl_count(env_vars), "variables")
 	self._dotenv_data = env_vars
 	self._dotenv_loaded = true
 	self._dotenv_file_path = dotenv_path
@@ -202,28 +204,29 @@ function EnvProvider:resolve(identifier)
 		return nil, "Empty variable name"
 	end
 
-	-- Check cache first
 	local cache_key = "env:" .. var_name
 	local cached_value = self:cache_get(cache_key)
 	if cached_value then
+		log.trace("Resolved", identifier, "from cache")
 		return cached_value, nil
 	end
 
-	-- Reload .env file if configured to do so
 	if self._config.reload_on_change then
 		self:_load_dotenv()
 	end
 
 	local value = nil
 
-	-- 1. Check .env file first (higher precedence)
 	if self._dotenv_data[var_name] then
 		value = self._dotenv_data[var_name]
+		log.debug("Resolved", identifier, "from .env file")
 	end
 
-	-- 2. Fall back to OS environment if not found in .env
 	if not value and self._config.fallback_to_os then
 		value = os.getenv(var_name)
+		if value then
+			log.debug("Resolved", identifier, "from OS environment")
+		end
 	end
 
 	-- 3. Try case-insensitive search if enabled and not found
@@ -253,10 +256,11 @@ function EnvProvider:resolve(identifier)
 	end
 
 	if value then
-		-- Cache the result
 		self:cache_set(cache_key, value, self._config.cache_ttl)
+		log.info("Resolved {{" .. identifier .. "}} -> (redacted)")
 		return value, nil
 	else
+		log.warn("Failed to resolve {{" .. identifier .. "}}: variable not found")
 		return nil, "Environment variable '" .. var_name .. "' not found"
 	end
 end

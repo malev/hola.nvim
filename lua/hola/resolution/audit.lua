@@ -3,6 +3,7 @@
 --- Never stores actual values, only safe metadata for debugging
 
 local M = {}
+local log = require("hola.log")
 
 -- Audit trail class
 local AuditTrail = {}
@@ -22,12 +23,13 @@ function M.create_secure_metadata(value)
 		}
 	end
 
+	local redacted_value = log.redact(value)
 	local starts_with = ""
-	if #value > 0 then
-		if #value <= 4 then
-			starts_with = value
+	if #redacted_value > 0 then
+		if #redacted_value <= 20 then
+			starts_with = redacted_value
 		else
-			starts_with = value:sub(1, 4) .. "••••"
+			starts_with = redacted_value:sub(1, 20) .. "..."
 		end
 	end
 

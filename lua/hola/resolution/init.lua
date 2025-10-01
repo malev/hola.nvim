@@ -4,23 +4,16 @@
 
 local M = {}
 
--- Provider definitions - stores provider metadata for lazy loading
 local provider_definitions = {}
-
--- Provider cache - stores initialized provider instances
 local provider_cache = {}
-
--- Failed provider registry - stores providers that failed to load
 local failed_providers = {}
-
--- Initialization state
 local initialized = false
 
--- Module dependencies
 local config = require("hola.resolution.config")
 local queue = require("hola.resolution.queue")
 local audit = require("hola.resolution.audit")
 local feedback = require("hola.resolution.feedback")
+local log = require("hola.log")
 
 --- Register a provider definition for lazy loading
 --- @param name string Provider name (e.g., "env", "vault")
@@ -49,11 +42,11 @@ function M.register_provider_definition(name, module_path, pattern)
 
 	-- Check if provider is enabled in configuration
 	if not config.is_provider_enabled(name) then
+		log.debug("Provider '" .. name .. "' is disabled in configuration")
 		feedback.show_debug("Provider '" .. name .. "' is disabled in configuration")
 		return false, "Provider '" .. name .. "' is disabled in configuration"
 	end
 
-	-- Register the provider definition
 	provider_definitions[name] = {
 		name = name,
 		module_path = module_path,
@@ -61,6 +54,7 @@ function M.register_provider_definition(name, module_path, pattern)
 		loaded = false,
 	}
 
+	log.debug("Registered provider definition:", name)
 	feedback.show_debug("Registered provider definition: " .. name)
 	return true, nil
 end
@@ -93,19 +87,20 @@ function M.register_provider(name, provider)
 
 	-- Check if provider is enabled in configuration
 	if not config.is_provider_enabled(name) then
+		log.debug("Provider '" .. name .. "' is disabled in configuration")
 		feedback.show_debug("Provider '" .. name .. "' is disabled in configuration")
 		return false, "Provider '" .. name .. "' is disabled in configuration"
 	end
 
-	-- Initialize provider
 	local init_success, init_error = provider:initialize()
 	if not init_success then
+		log.error("Provider initialization failed for '" .. name .. "':", init_error or "unknown error")
 		return false, "Provider initialization failed: " .. (init_error or "unknown error")
 	end
 
-	-- Register the provider in cache
 	provider_cache[name] = provider
 
+	log.info("Provider registered and initialized:", name)
 	feedback.show_debug("Registered provider: " .. name)
 	return true, nil
 end
@@ -128,15 +123,17 @@ function M.load_provider(name)
 
 	-- Check if provider previously failed to load
 	if failed_providers[name] then
+		log.debug("Provider '" .. name .. "' previously failed to load:", failed_providers[name].error)
 		return nil, failed_providers[name].error
 	end
 
+	log.debug("Lazy loading provider:", name)
 	feedback.show_debug("Lazy loading provider: " .. name)
 
-	-- Load the provider module
 	local ok, provider_module = pcall(require, definition.module_path)
 	if not ok or not provider_module or not provider_module.new then
 		local error_msg = "Provider module not available or invalid: " .. definition.module_path
+		log.error("Failed to load provider module '" .. name .. "':", error_msg)
 		failed_providers[name] = {
 			name = name,
 			module_path = definition.module_path,
@@ -149,9 +146,9 @@ function M.load_provider(name)
 	-- Create provider instance
 	local provider_instance = provider_module.new()
 
-	-- Use existing register_provider function to validate and initialize
 	local success, error = M.register_provider(name, provider_instance)
 	if not success then
+		log.error("Provider registration failed for '" .. name .. "':", error)
 		failed_providers[name] = {
 			name = name,
 			module_path = definition.module_path,
@@ -161,8 +158,8 @@ function M.load_provider(name)
 		return nil, error
 	end
 
-	-- Mark as loaded
 	definition.loaded = true
+	log.info("Provider successfully loaded:", name)
 	return provider_cache[name], nil
 end
 
@@ -302,24 +299,25 @@ end
 --- Initialize the resolution system
 --- This should be called once during plugin setup
 function M.initialize()
-	-- Prevent multiple initializations
 	if initialized then
+		log.debug("Resolution system already initialized")
 		feedback.show_debug("Resolution system already initialized")
 		return true
 	end
 
+	log.info("Initializing resolution system...")
 	feedback.show_debug("Initializing resolution system...")
 
-	-- Load configuration
 	local resolution_config = config.load()
 	if not resolution_config then
+		log.error("Failed to load resolution configuration")
 		feedback.show_error("config_missing", "Failed to load resolution configuration")
 		return false
 	end
 
+	log.debug("Configuration loaded successfully")
 	feedback.show_debug("Configuration loaded successfully")
 
-	-- Register provider definitions for lazy loading
 	local provider_definitions_to_register = {
 		{ name = "env", module = "hola.resolution.providers.env", pattern = "^{{env:.+}}$" },
 		{ name = "oauth", module = "hola.resolution.providers.oauth", pattern = "^{{oauth:.+}}$" },
@@ -334,12 +332,16 @@ function M.initialize()
 		if success then
 			registered_count = registered_count + 1
 		else
+			log.warn(
+				"Failed to register provider definition '" .. provider_info.name .. "': " .. (error or "unknown error")
+			)
 			feedback.show_debug(
 				"Failed to register provider definition '" .. provider_info.name .. "': " .. (error or "unknown error")
 			)
 		end
 	end
 
+	log.info("Resolution system initialized with " .. registered_count .. " provider definitions")
 	feedback.show_debug("Resolution system initialized with " .. registered_count .. " provider definitions")
 	initialized = true
 	return true

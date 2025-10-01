@@ -5,4 +5,8 @@ vim.cmd("set rtp+=deps/plenary.nvim")
 vim.cmd("source plugin/hola.lua")
 
 -- Setup hola.nvim for development/testing
-require("hola").setup({})
+require("hola").setup({
+	log = {
+		level = "DEBUG", -- TRACE, DEBUG, INFO, WARN, ERROR, OFF
+	},
+})
