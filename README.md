@@ -51,12 +51,6 @@ DELETE https://jsonplaceholder.typicode.com/posts/1
 
 ... and BAM! 🎉 The response will appear in a sleek panel on the right.
 
-**Need to dive deeper?**
-
-* `:HolaToggle`: Switch between response body and metadata/headers view
-* `:HolaClose`: Close the response window when you're done
-* `:HolaFormatJson`: Toggle between beautifully formatted and raw JSON (JSON responses only)
-
 ## Recommended Keymaps: Supercharge Your Workflow! ⚡
 
 Here are some handy keymaps to make sending requests a breeze. Add these to your Neovim configuration:

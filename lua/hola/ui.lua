@@ -153,14 +153,92 @@ local function _format_headers(parsed_headers)
 	return lines
 end
 
+--- Format bytes into human-readable size
+-- @param bytes (number) Number of bytes
+-- @return (string) Formatted size string
+local function _format_bytes(bytes)
+	if not bytes or bytes == 0 then
+		return "0 B"
+	end
+
+	local units = { "B", "KB", "MB", "GB" }
+	local unit_index = 1
+	local size = bytes
+
+	while size >= 1024 and unit_index < #units do
+		size = size / 1024
+		unit_index = unit_index + 1
+	end
+
+	if unit_index == 1 then
+		return string.format("%d %s", size, units[unit_index])
+	else
+		return string.format("%.2f %s", size, units[unit_index])
+	end
+end
+
+--- Get HTTP status code explanation
+-- @param status (number) HTTP status code
+-- @return (string) Status explanation
+local function _get_status_explanation(status)
+	local explanations = {
+		[200] = "OK - Request succeeded",
+		[201] = "Created - Resource created successfully",
+		[204] = "No Content - Request succeeded with no response body",
+		[400] = "Bad Request - Invalid request syntax",
+		[401] = "Unauthorized - Authentication required",
+		[403] = "Forbidden - Access denied",
+		[404] = "Not Found - Resource doesn't exist",
+		[405] = "Method Not Allowed - HTTP method not supported",
+		[408] = "Request Timeout - Server timed out waiting for request",
+		[429] = "Too Many Requests - Rate limit exceeded",
+		[500] = "Internal Server Error - Server encountered an error",
+		[502] = "Bad Gateway - Invalid response from upstream server",
+		[503] = "Service Unavailable - Server temporarily unavailable",
+		[504] = "Gateway Timeout - Upstream server timed out",
+	}
+
+	return explanations[status] or "Unknown status code"
+end
+
 --- Creates the summary for the top of the information buffer.
 -- @param result (table) The processed response object.
 -- @return (table) Formatted summary in a table.
 local function _create_summary(result)
 	local status_text = result.status or "N/A"
+	local status_explanation = result.status and _get_status_explanation(result.status) or ""
 	local time_text = result.elapsed_ms and string.format("%.0f ms", result.elapsed_ms) or "N/A"
 
-	return { "Status Code: " .. status_text, "Elapsed Time: " .. time_text }
+	-- Calculate body size
+	local body_size = result.body and #result.body or 0
+	local size_text = _format_bytes(body_size)
+
+	-- Try to get Content-Length from headers if available
+	local content_length = nil
+	if result.parsed_headers and result.parsed_headers["content-length"] then
+		content_length = tonumber(result.parsed_headers["content-length"])
+	end
+
+	-- Build summary lines
+	local summary = {
+		"-- Response Statistics --",
+		"",
+		"Status: " .. status_text .. " (" .. status_explanation .. ")",
+		"Time: " .. time_text,
+		"Size: " .. size_text .. " (" .. body_size .. " bytes)",
+	}
+
+	-- Add content type if available
+	if result.parsed_headers and result.parsed_headers["content-type"] then
+		table.insert(summary, "Content-Type: " .. result.parsed_headers["content-type"])
+	end
+
+	-- Add detected filetype
+	if result.filetype then
+		table.insert(summary, "Detected Type: " .. result.filetype)
+	end
+
+	return summary
 end
 
 --- Main function to display a successful response. Shows body by default.
