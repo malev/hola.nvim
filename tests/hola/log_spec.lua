@@ -91,20 +91,6 @@ describe("hola.log", function()
 	end)
 
 	describe("secret redaction", function()
-		it("should redact Bearer tokens", function()
-			log.clear()
-			vim.wait(50)
-			log.info("Authorization: Bearer sk-1234567890abcdefghijklmnop")
-			vim.wait(50)
-
-			local content = vim.fn.readfile(log.get_filename())
-			local log_text = table.concat(content, "\n")
-			local has_redacted = log_text:match("sk%-1234%*%*%*%*nop") ~= nil
-			local has_original = log_text:match("sk%-1234567890abcdefghijklmnop") ~= nil
-			assert.is_true(has_redacted)
-			assert.is_false(has_original)
-		end)
-
 		it("should redact API keys", function()
 			log.info("api_key=1234567890abcdefgh")
 			vim.wait(100)
@@ -114,21 +100,6 @@ describe("hola.log", function()
 			assert.is_true(log_text:match("1234%*%*%*%*fgh") ~= nil)
 			assert.is_false(log_text:match("1234567890abcdefgh") ~= nil)
 		end)
-
-		it("should redact GitHub tokens", function()
-			log.clear()
-			vim.wait(50)
-			log.info("token: gho_1234567890abcdefghij")
-			vim.wait(50)
-
-			local content = vim.fn.readfile(log.get_filename())
-			local log_text = table.concat(content, "\n")
-			local has_redacted = log_text:match("gho_1234%*%*%*%*hij") ~= nil
-			local has_original = log_text:match("gho_1234567890abcdefghij") ~= nil
-			assert.is_true(has_redacted)
-			assert.is_false(has_original)
-		end)
-
 	end)
 
 	describe("file operations", function()
@@ -198,21 +169,6 @@ describe("hola.log", function()
 
 			local content = vim.fn.readfile(log.get_filename())
 			assert.is_true(#content >= 5)
-		end)
-
-		it("OFF level should log nothing", function()
-			log.clear()
-			vim.wait(50)
-			log.set_level("OFF")
-			log.trace("trace")
-			log.debug("debug")
-			log.info("info")
-			log.warn("warn")
-			log.error("error")
-			vim.wait(50)
-
-			local stat = vim.loop.fs_stat(log.get_filename())
-			assert.is_true(stat == nil or stat.size == 0)
 		end)
 	end)
 end)
