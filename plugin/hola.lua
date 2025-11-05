@@ -30,6 +30,15 @@ end, {
 	desc = "Toggle JSON formatting between formatted and raw views",
 })
 
+vim.api.nvim_create_user_command("HolaSave", function(opts)
+	local file_path = opts.args
+	require("hola").save_last_response(file_path)
+end, {
+	nargs = 1,
+	desc = "Save the last response to a file",
+	complete = "file",
+})
+
 -- Debug commands for the new resolution system
 vim.api.nvim_create_user_command("HolaDebug", function(opts)
 	require("hola.resolution.debug").debug_command(opts)

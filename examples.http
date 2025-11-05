@@ -112,3 +112,20 @@ Content-Type: application/json
   "version": "{{env:VERSION}}",
   "message": "Multi-provider example - OAuth + env + refs"
 }
+
+### =============================================================================
+### File Output (Download Responses)
+### =============================================================================
+
+### Save response to a file using @output directive
+# @output response.json
+GET http://localhost:8000/hello
+Accept: application/json
+
+### Download binary content (images, PDFs, etc.)
+# @output downloads/image.png
+# GET https://example.com/image.png
+# Accept: image/png
+
+### After receiving a response, you can also save it manually using:
+# :HolaSave filename.ext

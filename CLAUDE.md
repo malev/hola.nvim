@@ -31,10 +31,12 @@ To develop the plugin:
 
 **Request Processing Pipeline:**
 1. `utils.get_request_under_cursor()` - Extracts HTTP request text from cursor position
-2. `resolution.resolve_variables()` - Resolves template variables using provider system
-3. `utils.parse_request()` - Parses HTTP request syntax into structured data
-4. `request.execute()` - Executes async HTTP request via plenary.curl
-5. `ui.display_response()` - Shows response in split window with JSON formatting
+2. `utils.parse_output_directive()` - Extracts `@output` file directive from comments (if present)
+3. `resolution.resolve_variables()` - Resolves template variables using provider system
+4. `utils.parse_request()` - Parses HTTP request syntax into structured data
+5. `request.execute()` - Executes async HTTP request via plenary.curl
+6. `file_writer.save_response()` - Saves response to file if `@output` directive was specified
+7. `ui.display_response()` - Shows response in split window with JSON formatting
 
 **Key Modules:**
 
@@ -42,6 +44,7 @@ To develop the plugin:
   - HTTP request parsing with separator detection (`###` lines)
   - Header normalization and response filetype detection
   - Authentication header processing (Basic Auth encoding)
+  - Output directive parsing (`# @output filename`)
 
 - **`lua/hola/resolution.lua`** - Provider-based variable resolution
   - Unified template variable resolution using `{{provider:identifier}}` syntax
@@ -77,6 +80,12 @@ To develop the plugin:
   - Status indicators during request execution
   - Progress and error messages
 
+- **`lua/hola/file_writer.lua`** - File output and download
+  - Saves HTTP responses to files (similar to curl -o)
+  - Handles binary and text content
+  - Automatic directory creation
+  - Path expansion support (~, ., ..)
+
 **Provider System:**
 - **env**: Environment variables and `.env` files
 - **vault**: HashiCorp Vault secret retrieval
@@ -89,6 +98,7 @@ To develop the plugin:
 - Headers as `Key: Value` pairs
 - Blank line separates headers from body
 - Template variables: `{{provider:identifier}}` (e.g., `{{env:API_KEY}}`, `{{oauth:service}}`)
+- Output directive: `# @output filename` - Saves response to file (similar to curl -o)
 
 ### Command Interface
 
@@ -97,6 +107,7 @@ To develop the plugin:
 - `:HolaToggle` - Toggle between response body and metadata view
 - `:HolaClose` - Close response window
 - `:HolaFormatJson` - Toggle JSON formatting (formatted ↔ raw)
+- `:HolaSave <filename>` - Save the last response to a file
 
 
 ### Dependencies
@@ -112,4 +123,6 @@ Tests are located in `tests/` directory and use plenary.nvim's test framework. K
 - JSON formatting and processing
 - OAuth token management
 - Virtual text integration
+- File output and download functionality
+- Output directive parsing
 - Full integration testing

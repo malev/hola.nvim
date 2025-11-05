@@ -165,6 +165,36 @@ local function _get_lines_as_string(bufnr, start_line_1based, end_line_1based)
 	return vim.fn.trim(request_text) -- Trim leading/trailing whitespace/newlines
 end
 
+--- Extracts output file directive from comment lines.
+-- Looks for '# @output filename' directive in the request text.
+-- @param str (string) The input multi-line string.
+-- @return (string|nil) The output filename if found, nil otherwise.
+function M.parse_output_directive(str)
+	-- Handle nil or empty input gracefully
+	if not str or str == "" then
+		return nil
+	end
+
+	-- Split the input string into a table of lines.
+	local lines = vim.split(str, "\n")
+
+	-- Iterate through the lines looking for @output directive
+	for _, line in ipairs(lines) do
+		-- Check if the line is a comment with @output directive
+		-- Pattern: optional whitespace, #, optional whitespace, @output, whitespace, filename
+		local output_file = line:match("^%s*#%s*@output%s+(.+)%s*$")
+		if output_file then
+			-- Trim any remaining whitespace from the filename
+			output_file = vim.fn.trim(output_file)
+			if output_file ~= "" then
+				return output_file
+			end
+		end
+	end
+
+	return nil
+end
+
 --- Removes lines that consist entirely of comments.
 -- A comment line starts with '#', potentially preceded by whitespace.
 -- Preserves blank lines and lines that have non-comment content.
