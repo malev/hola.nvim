@@ -511,4 +511,10 @@ function M.clear_sending_feedback(feedback_info)
 	return { buf = buf, win = win }
 end
 
+--- Gets the last response that was displayed.
+-- @return (table|nil) The last response object, or nil if no response exists.
+function M.get_last_response()
+	return state.last_response
+end
+
 return M

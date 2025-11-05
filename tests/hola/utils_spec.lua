@@ -73,6 +73,47 @@ describe("hola.utils", function()
 			assert.are.equal(expected, actual)
 		end)
 	end)
+	describe("parse_output_directive", function()
+		it("extracts output filename from @output directive", function()
+			local input = "# @output image.png\nGET http://example.com/image.png"
+			local expected = "image.png"
+			assert.are.equal(expected, utils.parse_output_directive(input))
+		end)
+
+		it("handles whitespace around directive", function()
+			local input = "#  @output   image.png  \nGET http://example.com/image.png"
+			local expected = "image.png"
+			assert.are.equal(expected, utils.parse_output_directive(input))
+		end)
+
+		it("handles paths with directories", function()
+			local input = "# @output downloads/images/photo.jpg\nGET http://example.com/photo.jpg"
+			local expected = "downloads/images/photo.jpg"
+			assert.are.equal(expected, utils.parse_output_directive(input))
+		end)
+
+		it("returns nil when no @output directive", function()
+			local input = "# This is a comment\nGET http://example.com/api"
+			assert.is_nil(utils.parse_output_directive(input))
+		end)
+
+		it("returns nil for empty input", function()
+			assert.is_nil(utils.parse_output_directive(""))
+			assert.is_nil(utils.parse_output_directive(nil))
+		end)
+
+		it("ignores @output in non-comment lines", function()
+			local input = "GET http://example.com/@output/test"
+			assert.is_nil(utils.parse_output_directive(input))
+		end)
+
+		it("finds first @output directive when multiple present", function()
+			local input = "# @output first.png\n# @output second.png\nGET http://example.com"
+			local expected = "first.png"
+			assert.are.equal(expected, utils.parse_output_directive(input))
+		end)
+	end)
+
 	describe("remove_comments", function()
 		it("removes comments", function()
 			local input = "# localhost\nPOST http://localhost"

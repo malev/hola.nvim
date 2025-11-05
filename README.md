@@ -27,6 +27,7 @@ Just add this to your `plugins` table in your Neovim configuration (using your p
   * `:HolaToggle`: Toggle between response body and metadata view
   * `:HolaClose`: Close response window
   * `:HolaFormatJson`: Toggle JSON formatting (formatted ↔ raw) ✨
+  * `:HolaSave <filename>`: Save the last response to a file 💾
 
 ## Example: Let's Send Some Requests! 📬
 
@@ -66,6 +67,60 @@ map({ "n", "v" }, "<leader>hc", "<cmd>:HolaClose<cr>", { desc = "Close response 
 -- Hola keymaps - JSON tools ✨
 map({ "n", "v" }, "<leader>hf", "<cmd>:HolaFormatJson<cr>", { desc = "Toggle JSON formatting" })
 ```
+
+## Download Files and Save Responses 💾
+
+`hola.nvim` makes it easy to download files and save HTTP responses directly to your filesystem, just like curl's `-o` flag!
+
+### Automatic File Saving with `@output`
+
+Add a comment directive to your request to automatically save the response to a file:
+
+```http
+# @output response.json
+GET https://api.example.com/data
+Accept: application/json
+```
+
+The response body will be saved to `response.json` in your current working directory. You can use:
+- **Relative paths**: `@output downloads/image.png`
+- **Absolute paths**: `@output /tmp/response.json`
+- **Home directory**: `@output ~/Downloads/file.pdf`
+
+### Downloading Binary Content
+
+Perfect for downloading images, PDFs, and other binary files:
+
+```http
+# @output screenshot.png
+GET https://example.com/images/screenshot.png
+Accept: image/png
+```
+
+```http
+# @output document.pdf
+GET https://example.com/files/document.pdf
+Accept: application/pdf
+```
+
+### Manual Saving with `:HolaSave`
+
+You can also save the last response manually after viewing it:
+
+1. Send a request with `:HolaSend`
+2. Review the response in the split window
+3. Save it with `:HolaSave filename.ext`
+
+```vim
+:HolaSave downloads/response.json
+```
+
+**Features:**
+- Automatically creates parent directories if they don't exist
+- Handles both text and binary content correctly
+- Works with all HTTP methods (GET, POST, etc.)
+- Supports path expansion (`~`, `.`, `..`)
+- Shows success/error notifications
 
 ## Beautiful JSON Responses with Smart Formatting! ✨
 
