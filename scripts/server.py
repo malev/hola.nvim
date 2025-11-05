@@ -157,9 +157,183 @@ class SimpleHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b'{"error":"Not Found"}')
 
+    def _handle_graphql(self):
+        """Handle GraphQL requests"""
+        content_length = int(self.headers.get('Content-Length', 0))
+        body = self.rfile.read(content_length).decode('utf-8')
+
+        # Validate authentication
+        auth_header = self.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            self._send_json({
+                "errors": [{
+                    "message": "Authentication required",
+                    "extensions": {"code": "UNAUTHENTICATED"}
+                }]
+            }, 401)
+            return
+
+        try:
+            graphql_request = json.loads(body)
+            query = graphql_request.get("query", "")
+            variables = graphql_request.get("variables", {})
+
+            print(f"GraphQL Query: {query[:100]}...")
+            print(f"Variables: {variables}")
+
+            # Test for specific queries and return mock responses
+            if "IntrospectionQuery" in query or "__schema" in query:
+                # Introspection query
+                self._send_json({
+                    "data": {
+                        "__schema": {
+                            "types": [
+                                {
+                                    "name": "User",
+                                    "kind": "OBJECT",
+                                    "description": "A user in the system",
+                                    "fields": [
+                                        {"name": "id", "type": {"name": "ID", "kind": "SCALAR"}},
+                                        {"name": "name", "type": {"name": "String", "kind": "SCALAR"}},
+                                        {"name": "email", "type": {"name": "String", "kind": "SCALAR"}}
+                                    ]
+                                },
+                                {
+                                    "name": "Post",
+                                    "kind": "OBJECT",
+                                    "description": "A blog post",
+                                    "fields": [
+                                        {"name": "id", "type": {"name": "ID", "kind": "SCALAR"}},
+                                        {"name": "title", "type": {"name": "String", "kind": "SCALAR"}},
+                                        {"name": "content", "type": {"name": "String", "kind": "SCALAR"}}
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                })
+            elif "createPost" in query or "CreatePost" in query:
+                # Mutation - createPost
+                post_input = variables.get("input", {})
+                self._send_json({
+                    "data": {
+                        "createPost": {
+                            "id": "post_123",
+                            "title": post_input.get("title", "Untitled"),
+                            "content": post_input.get("content", ""),
+                            "author": {
+                                "id": post_input.get("authorId", "user_1"),
+                                "name": "John Doe"
+                            },
+                            "createdAt": "2025-01-15T10:30:00Z"
+                        }
+                    }
+                })
+            elif "SearchProducts" in query or "products" in query:
+                # Query - products with filters
+                filters = variables.get("filters", {})
+                pagination = variables.get("pagination", {})
+                self._send_json({
+                    "data": {
+                        "products": {
+                            "totalCount": 42,
+                            "pageInfo": {
+                                "hasNextPage": True,
+                                "endCursor": "cursor_abc123"
+                            },
+                            "items": [
+                                {
+                                    "id": "prod_1",
+                                    "name": "Laptop Pro",
+                                    "price": 999.99,
+                                    "category": filters.get("category", "electronics"),
+                                    "inStock": True
+                                },
+                                {
+                                    "id": "prod_2",
+                                    "name": "Wireless Mouse",
+                                    "price": 29.99,
+                                    "category": filters.get("category", "electronics"),
+                                    "inStock": True
+                                }
+                            ]
+                        }
+                    }
+                })
+            elif "errorTest" in query:
+                # Test error handling
+                self._send_json({
+                    "errors": [
+                        {
+                            "message": "Field 'nonExistentField' not found on type 'Query'",
+                            "locations": [{"line": 2, "column": 3}],
+                            "path": ["nonExistentField"],
+                            "extensions": {"code": "GRAPHQL_VALIDATION_FAILED"}
+                        }
+                    ],
+                    "data": None
+                })
+            elif "user" in query.lower():
+                # Query - user
+                user_id = variables.get("userId") or variables.get("id", "1")
+                include_email = variables.get("includeEmail", True)
+
+                user_data = {
+                    "id": user_id,
+                    "name": "John Doe",
+                    "posts": [
+                        {
+                            "id": "post_1",
+                            "title": "Getting Started with GraphQL",
+                            "publishedAt": "2025-01-10T08:00:00Z"
+                        },
+                        {
+                            "id": "post_2",
+                            "title": "Advanced GraphQL Patterns",
+                            "publishedAt": "2025-01-12T14:30:00Z"
+                        }
+                    ]
+                }
+
+                if include_email:
+                    user_data["email"] = "john.doe@example.com"
+
+                self._send_json({
+                    "data": {
+                        "user": user_data
+                    }
+                })
+            else:
+                # Default response for unknown queries
+                self._send_json({
+                    "data": {
+                        "message": "GraphQL endpoint is working!",
+                        "receivedQuery": query[:100] + "..." if len(query) > 100 else query,
+                        "receivedVariables": variables
+                    }
+                })
+
+        except json.JSONDecodeError:
+            self._send_json({
+                "errors": [{
+                    "message": "Invalid JSON in request body",
+                    "extensions": {"code": "BAD_REQUEST"}
+                }]
+            }, 400)
+        except Exception as e:
+            self._send_json({
+                "errors": [{
+                    "message": f"Internal server error: {str(e)}",
+                    "extensions": {"code": "INTERNAL_SERVER_ERROR"}
+                }]
+            }, 500)
+
     def do_POST(self):
         self._log_headers()
-        if self.path == "/echo":
+        if self.path == "/graphql":
+            # GraphQL endpoint
+            self._handle_graphql()
+        elif self.path == "/echo":
             # simple POST endpoint
             self._send_json({"message": "This is a POST response"})
         elif self.path == "/secure":

@@ -412,6 +412,20 @@ If errors occur, they're highlighted in the metadata view:
   2. Variable '$userId' is not defined
 ```
 
+### Testing GraphQL
+
+For comprehensive testing instructions, including automated tests and manual testing with the included test server, see **[TESTING.md](TESTING.md)**.
+
+Quick start:
+```bash
+# Start the test server with GraphQL endpoint
+python scripts/server.py
+
+# Run automated tests
+nvim --headless -u scripts/init.lua \
+  -c "PlenaryBustedFile tests/hola/graphql_spec.lua {minimal_init='./scripts/init.lua'}"
+```
+
 ## Development: Join the "¡Hola!" Brigade! 🧑‍💻
 
 Want to contribute to `hola.nvim`? Awesome! Here's how to get started:
@@ -434,7 +448,7 @@ Want to contribute to `hola.nvim`? Awesome! Here's how to get started:
    ```bash
    python scripts/server.py
    ```
-   This provides local endpoints for testing OAuth, authentication, and variable resolution.
+   This provides local endpoints for testing OAuth, authentication, GraphQL, and variable resolution.
 
 4. **Open Neovim with the plugin:**
    ```bash
@@ -451,6 +465,8 @@ nvim --headless -u scripts/init.lua \
   -c "PlenaryBustedDirectory tests/ {minimal_init = 'scripts/init.lua'}" \
   -c "qa"
 ```
+
+For detailed testing instructions, see [TESTING.md](TESTING.md).
 
 ### Project Structure
 
