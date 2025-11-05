@@ -238,6 +238,19 @@ local function _create_summary(result)
 		table.insert(summary, "Detected Type: " .. result.filetype)
 	end
 
+	-- Add GraphQL-specific info if applicable
+	if result.is_graphql then
+		table.insert(summary, "Format: GraphQL")
+		if result.graphql_errors and #result.graphql_errors > 0 then
+			table.insert(summary, "")
+			table.insert(summary, "⚠️  GraphQL Errors: " .. #result.graphql_errors .. " error(s) found")
+			for i, err in ipairs(result.graphql_errors) do
+				local msg = err.message or "Unknown error"
+				table.insert(summary, "  " .. i .. ". " .. msg)
+			end
+		end
+	end
+
 	return summary
 end
 

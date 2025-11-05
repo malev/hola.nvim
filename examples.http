@@ -112,3 +112,135 @@ Content-Type: application/json
   "version": "{{env:VERSION}}",
   "message": "Multi-provider example - OAuth + env + refs"
 }
+
+### =============================================================================
+### GraphQL Support
+### =============================================================================
+
+### Simple GraphQL query without variables
+GRAPHQL http://localhost:8000/graphql
+Authorization: Bearer {{env:API_TOKEN}}
+Accept: application/json
+
+query {
+  user(id: "1") {
+    id
+    name
+    email
+    posts {
+      id
+      title
+    }
+  }
+}
+
+### GraphQL query with variables
+GRAPHQL http://localhost:8000/graphql
+Authorization: Bearer {{oauth:local_server}}
+Accept: application/json
+
+query GetUser($userId: ID!, $includeEmail: Boolean!) {
+  user(id: $userId) {
+    id
+    name
+    email @include(if: $includeEmail)
+    posts {
+      id
+      title
+      publishedAt
+    }
+  }
+}
+
+{
+  "userId": "123",
+  "includeEmail": true
+}
+
+### GraphQL mutation with complex input
+GRAPHQL http://localhost:8000/graphql
+Authorization: Bearer {{env:API_TOKEN}}
+Content-Type: application/json
+
+mutation CreatePost($input: CreatePostInput!) {
+  createPost(input: $input) {
+    id
+    title
+    content
+    author {
+      id
+      name
+    }
+    createdAt
+  }
+}
+
+{
+  "input": {
+    "title": "Getting Started with GraphQL",
+    "content": "GraphQL is a query language for APIs...",
+    "authorId": "123",
+    "tags": ["graphql", "api", "tutorial"]
+  }
+}
+
+### GraphQL with nested variables and fragments
+GRAPHQL http://localhost:8000/graphql
+Authorization: Bearer {{env:API_TOKEN}}
+
+query SearchProducts($filters: ProductFilters!, $pagination: PaginationInput!) {
+  products(filters: $filters, pagination: $pagination) {
+    totalCount
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    items {
+      ...ProductDetails
+    }
+  }
+}
+
+fragment ProductDetails on Product {
+  id
+  name
+  price
+  category
+  inStock
+}
+
+{
+  "filters": {
+    "category": "electronics",
+    "priceRange": {
+      "min": 100,
+      "max": 1000
+    },
+    "inStock": true
+  },
+  "pagination": {
+    "first": 10,
+    "after": null
+  }
+}
+
+### GraphQL introspection query
+GRAPHQL http://localhost:8000/graphql
+Authorization: Bearer {{env:API_TOKEN}}
+
+query IntrospectionQuery {
+  __schema {
+    types {
+      name
+      kind
+      description
+      fields {
+        name
+        type {
+          name
+          kind
+        }
+      }
+    }
+  }
+}

@@ -288,6 +288,129 @@ OAuth tokens are automatically obtained, cached, and refreshed as needed. Config
 
 > See [OAUTH.md](OAUTH.md) for detailed OAuth configuration, supported flows, and provider examples.
 
+## GraphQL Support 🎯
+
+`hola.nvim` provides first-class support for GraphQL with a dedicated `GRAPHQL` method that automatically transforms your queries into properly formatted POST requests.
+
+### Basic GraphQL Query
+
+Use the `GRAPHQL` keyword to send GraphQL queries:
+
+```http
+GRAPHQL https://api.example.com/graphql
+Authorization: Bearer {{env:API_TOKEN}}
+
+query {
+  user(id: "1") {
+    id
+    name
+    email
+    posts {
+      id
+      title
+    }
+  }
+}
+```
+
+### GraphQL with Variables
+
+Separate your query from variables with a blank line. Variables should be in JSON format:
+
+```http
+GRAPHQL https://api.example.com/graphql
+Authorization: Bearer {{oauth:my_service}}
+
+query GetUser($userId: ID!, $includeEmail: Boolean!) {
+  user(id: $userId) {
+    id
+    name
+    email @include(if: $includeEmail)
+    posts {
+      id
+      title
+      publishedAt
+    }
+  }
+}
+
+{
+  "userId": "123",
+  "includeEmail": true
+}
+```
+
+### GraphQL Mutations
+
+Mutations work the same way as queries:
+
+```http
+GRAPHQL https://api.example.com/graphql
+Authorization: Bearer {{env:API_TOKEN}}
+
+mutation CreatePost($input: CreatePostInput!) {
+  createPost(input: $input) {
+    id
+    title
+    content
+    author {
+      id
+      name
+    }
+    createdAt
+  }
+}
+
+{
+  "input": {
+    "title": "Getting Started with GraphQL",
+    "content": "GraphQL is a query language for APIs...",
+    "authorId": "123",
+    "tags": ["graphql", "api", "tutorial"]
+  }
+}
+```
+
+### GraphQL Features
+
+- **Automatic transformation**: `GRAPHQL` requests are automatically converted to POST requests with proper JSON body structure
+- **Variable support**: Separate variables section parsed as JSON
+- **Template variables**: Full support for `{{provider:identifier}}` syntax in queries and variables
+- **Error highlighting**: GraphQL errors in responses are automatically detected and highlighted in the metadata view
+- **Fragments support**: Use GraphQL fragments in your queries
+- **Introspection queries**: Run schema introspection queries for API exploration
+
+### How It Works
+
+When you send a `GRAPHQL` request, `hola.nvim`:
+1. Parses your query and variables sections
+2. Transforms it into a POST request with Content-Type: application/json
+3. Creates a JSON body with `{"query": "...", "variables": {...}}`
+4. Sends the request and displays the formatted response
+5. Detects GraphQL errors in the response and highlights them in metadata
+
+### GraphQL Response Format
+
+GraphQL responses are displayed as formatted JSON with special handling for errors:
+
+```json
+{
+  "data": {
+    "user": {
+      "id": "123",
+      "name": "John Doe"
+    }
+  }
+}
+```
+
+If errors occur, they're highlighted in the metadata view:
+
+```
+⚠️  GraphQL Errors: 2 error(s) found
+  1. Field 'user' not found on type 'Query'
+  2. Variable '$userId' is not defined
+```
 
 ## Development: Join the "¡Hola!" Brigade! 🧑‍💻
 

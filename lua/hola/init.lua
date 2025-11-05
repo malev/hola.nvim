@@ -5,6 +5,7 @@ local config = require("hola.config")
 local vault_health = require("hola.vault_health")
 local virtual_text = require("hola.virtual_text")
 local resolution = require("hola.resolution")
+local graphql = require("hola.graphql")
 
 local M = {}
 
@@ -71,6 +72,15 @@ function M.run_request_under_cursor()
 		return
 	end
 
+	-- Transform GraphQL requests to POST with JSON body
+	if request_options.method == "GRAPHQL" then
+		request_options = graphql.transform_to_http(request_options)
+		if not request_options then
+			virtual_text.show_parse_error()
+			return
+		end
+	end
+
 	-- Update to "Sending..." after variables are resolved
 	virtual_text.show_request_sending()
 
@@ -79,6 +89,9 @@ function M.run_request_under_cursor()
 		if result.error then
 			virtual_text.show_error("request", result.error)
 		else
+			-- Format GraphQL response if applicable
+			result = graphql.format_response(result)
+
 			virtual_text.show_request_success(result.status, result.elapsed_ms)
 			ui.display_response(result)
 		end

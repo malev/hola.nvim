@@ -77,6 +77,12 @@ To develop the plugin:
   - Status indicators during request execution
   - Progress and error messages
 
+- **`lua/hola/graphql.lua`** - GraphQL support
+  - GraphQL query and mutation parsing
+  - Variables parsing (JSON section after query)
+  - Request transformation to POST with JSON body
+  - Response error detection and formatting
+
 **Provider System:**
 - **env**: Environment variables and `.env` files
 - **vault**: HashiCorp Vault secret retrieval
@@ -85,10 +91,11 @@ To develop the plugin:
 
 **Request File Format:**
 - Requests separated by `###` lines
-- First line: `METHOD URL [HTTP/Version]`
+- First line: `METHOD URL [HTTP/Version]` or `GRAPHQL URL`
 - Headers as `Key: Value` pairs
 - Blank line separates headers from body
 - Template variables: `{{provider:identifier}}` (e.g., `{{env:API_KEY}}`, `{{oauth:service}}`)
+- GraphQL format: Query/mutation followed by optional JSON variables (separated by blank line)
 
 ### Command Interface
 
@@ -112,4 +119,6 @@ Tests are located in `tests/` directory and use plenary.nvim's test framework. K
 - JSON formatting and processing
 - OAuth token management
 - Virtual text integration
+- GraphQL query parsing and transformation
+- GraphQL response error detection
 - Full integration testing

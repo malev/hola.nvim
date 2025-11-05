@@ -233,8 +233,9 @@ function M.validate_request_text(request_text)
 	end
 
 	-- Vim Regex Pattern string (note escaped alternation '\|', grouping '\(...\)')
+	-- Added GRAPHQL method for GraphQL query support
 	local vim_pattern =
-		[[^\(GET\|POST\|PUT\|DELETE\|PATCH\|HEAD\|OPTIONS\|CONNECT\|TRACE\)\s\+\(\S\+\)\(\s\+HTTP/\d\.\d\)\?\s*$]]
+		[[^\(GET\|POST\|PUT\|DELETE\|PATCH\|HEAD\|OPTIONS\|CONNECT\|TRACE\|GRAPHQL\)\s\+\(\S\+\)\(\s\+HTTP/\d\.\d\)\?\s*$]]
 
 	-- Use vim.fn.matchlist(text, pattern)
 	-- It returns a list (table). Index 0 = full match, 1 = capture 1, 2 = capture 2, etc.
