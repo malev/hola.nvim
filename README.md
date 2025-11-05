@@ -122,6 +122,99 @@ You can also save the last response manually after viewing it:
 - Supports path expansion (`~`, `.`, `..`)
 - Shows success/error notifications
 
+### Testing the Download Feature
+
+Here's how to test the file download feature:
+
+**1. Test Automatic Saving with Local Server**
+
+First, start the test server:
+```bash
+python scripts/server.py
+```
+
+Create a test `.http` file:
+```http
+### Test automatic file saving
+# @output test_response.json
+GET http://localhost:8000/hello
+Accept: application/json
+
+### Test with nested directory
+# @output downloads/api/response.json
+GET http://localhost:8000/echo
+Content-Type: application/json
+
+{"test": "data"}
+```
+
+Place your cursor on the request and run `:HolaSend`. Check that:
+- `test_response.json` was created in the current directory
+- `downloads/api/response.json` was created with parent directories
+- Notification shows the saved file path
+
+**2. Test Manual Saving**
+
+Send a request without `@output`:
+```http
+GET http://localhost:8000/hello
+```
+
+After the response appears, run:
+```vim
+:HolaSave manual_save.json
+```
+
+Verify the file was created and contains the response body.
+
+**3. Test with Real APIs**
+
+Test downloading actual images or files:
+```http
+# @output test_image.png
+GET https://httpbin.org/image/png
+Accept: image/png
+```
+
+After running `:HolaSend`:
+- Check that `test_image.png` exists
+- Verify it's a valid image: `file test_image.png` (should show PNG image data)
+- Open it to confirm: `xdg-open test_image.png` (Linux) or `open test_image.png` (macOS)
+
+**4. Test Binary Content**
+
+```http
+# @output test_data.bin
+GET https://httpbin.org/bytes/1024
+```
+
+Verify the file size: `ls -lh test_data.bin` (should be ~1KB)
+
+**5. Test Path Expansion**
+
+```http
+# @output ~/Downloads/hola_test.json
+GET https://httpbin.org/json
+```
+
+Check that the file was saved to your Downloads folder.
+
+**6. Test Error Handling**
+
+Try invalid paths to verify error messages:
+```vim
+:HolaSave /root/forbidden.txt
+```
+
+You should see an error notification if you don't have write permissions.
+
+**Cleanup:**
+```bash
+# Remove test files
+rm -f test_response.json manual_save.json test_image.png test_data.bin
+rm -rf downloads/
+```
+
 ## Beautiful JSON Responses with Smart Formatting! ✨
 
 `hola.nvim` automatically detects JSON responses and provides powerful formatting and syntax highlighting features to make working with JSON a breeze.
@@ -384,12 +477,41 @@ nvim --headless -u scripts/init.lua \
   -c "qa"
 ```
 
+**Testing the File Download Feature:**
+
+Use the provided test file for comprehensive testing:
+
+```bash
+# 1. Start the test server
+python scripts/server.py
+
+# 2. Open the test file
+nvim -u scripts/init.lua test_download.http
+
+# 3. Run each test request with :HolaSend
+# 4. Verify files were created correctly
+ls -R test_outputs/
+
+# 5. Clean up
+rm -rf test_outputs/
+```
+
+The `test_download.http` file includes tests for:
+- Basic automatic saving
+- Nested directory creation
+- Manual saving with `:HolaSave`
+- Binary content (images, raw bytes)
+- Path expansion (~, ., ..)
+- POST requests with output
+- Error handling
+
 ### Project Structure
 
 - `lua/hola/` - Core plugin code
 - `lua/hola/resolution/` - Provider system for variable resolution
 - `tests/` - Test suite using plenary.nvim
 - `examples.http` - Example requests showcasing features
+- `test_download.http` - Comprehensive tests for file download feature
 - `.env.example` - Template for environment variables
 - `oauth.toml` - OAuth provider configurations
 - `refs` - Reference aliases for variables

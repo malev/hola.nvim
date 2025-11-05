@@ -1,0 +1,98 @@
+### =============================================================================
+### File Download Feature - Test Suite
+### =============================================================================
+### This file contains comprehensive tests for the file download feature.
+### Start the test server first: python scripts/server.py
+###
+### Usage:
+### 1. Place cursor on any request below
+### 2. Run :HolaSend
+### 3. Check that the file was created correctly
+### =============================================================================
+
+### Test 1: Basic automatic saving (JSON)
+# @output test_outputs/basic.json
+GET http://localhost:8000/hello
+Accept: application/json
+
+### Test 2: Automatic saving with nested directories
+# @output test_outputs/nested/dir/response.json
+GET http://localhost:8000/echo
+Content-Type: application/json
+
+{
+  "test": "automatic directory creation",
+  "timestamp": "2025-01-01T00:00:00Z"
+}
+
+### Test 3: Request without @output (for manual saving test)
+# After this request completes, run: :HolaSave test_outputs/manual_save.json
+GET http://localhost:8000/hello
+Accept: application/json
+
+### Test 4: Download from real API - Image (PNG)
+### Uncomment to test with real API (requires internet)
+# # @output test_outputs/test_image.png
+# GET https://httpbin.org/image/png
+# Accept: image/png
+
+### Test 5: Download from real API - JSON
+### Uncomment to test with real API (requires internet)
+# # @output test_outputs/httpbin_data.json
+# GET https://httpbin.org/json
+# Accept: application/json
+
+### Test 6: Download binary data
+### Uncomment to test with real API (requires internet)
+# # @output test_outputs/binary_data.bin
+# GET https://httpbin.org/bytes/1024
+
+### Test 7: Path expansion - Home directory
+### Uncomment to test (saves to your actual home directory)
+# # @output ~/hola_test_download.json
+# GET http://localhost:8000/hello
+# Accept: application/json
+
+### Test 8: Relative path from current directory
+# @output ./test_outputs/relative_path.json
+GET http://localhost:8000/hello
+Accept: application/json
+
+### Test 9: POST request with output
+# @output test_outputs/post_response.json
+POST http://localhost:8000/echo
+Content-Type: application/json
+
+{
+  "method": "POST",
+  "message": "Testing POST with file output"
+}
+
+### Test 10: Large response
+# @output test_outputs/stats.json
+GET http://localhost:8000/stats
+Accept: application/json
+
+### =============================================================================
+### Verification Commands
+### =============================================================================
+### Run these commands in your terminal after testing:
+###
+### 1. Check all files were created:
+###    ls -R test_outputs/
+###
+### 2. Verify file contents:
+###    cat test_outputs/basic.json
+###    cat test_outputs/nested/dir/response.json
+###
+### 3. Check file sizes:
+###    ls -lh test_outputs/
+###
+### 4. Verify JSON is valid:
+###    cat test_outputs/basic.json | jq .
+###
+### 5. Clean up test files:
+###    rm -rf test_outputs/
+###    rm -f ~/hola_test_download.json  # if you tested home directory
+###
+### =============================================================================
